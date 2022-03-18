@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1090659915107",
+    "firebase_url": "https://wordle-34c64-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "wordle-34c64",
+    "storage_bucket": "wordle-34c64.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1090659915107:android:7fc7971f76fe11f561af56",
+        "android_client_info": {
+          "package_name": "com.zuescoder69.wordle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1090659915107-c2efl23hoob155f4rhgirsjvltme21op.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zuescoder69.wordle",
+            "certificate_hash": "76e8578066e09c1462ce859958a694c4f2b9aebf"
+          }
+        },
+        {
+          "client_id": "1090659915107-i7hkcrnc20jh34osuimpc2p9vq4pkrnc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBik-iQPtJJvsXPMsvcynBsZFLpXdTlXnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1090659915107-i7hkcrnc20jh34osuimpc2p9vq4pkrnc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
