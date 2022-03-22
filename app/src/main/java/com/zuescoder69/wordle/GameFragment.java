@@ -1,9 +1,12 @@
 package com.zuescoder69.wordle;
 
+import static android.content.Context.VIBRATOR_SERVICE;
+
 import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -59,6 +62,8 @@ public class GameFragment extends BaseFragment {
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private ArrayList<RowModel> rowsList;
+    private Vibrator vibrator;
+    private long vibrationTime = 80;
 
     public GameFragment() {
         // Required empty public constructor
@@ -73,6 +78,7 @@ public class GameFragment extends BaseFragment {
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
         gameMode = bundle.getString("gameMode");
+        vibrator = (Vibrator) getActivity().getSystemService(VIBRATOR_SERVICE);
     }
 
     @Override
@@ -623,6 +629,7 @@ public class GameFragment extends BaseFragment {
         binding.btnEnter.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnEnter.startAnimation(scaleUp);
+                vibrator.vibrate(vibrationTime);
                 if (current == 6) {
                     if (row < 7) {
                         submitWord();
@@ -636,6 +643,7 @@ public class GameFragment extends BaseFragment {
 
         binding.btnCancel.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                vibrator.vibrate(vibrationTime);
                 binding.btnCancel.startAnimation(scaleUp);
                 removeCharInView();
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
@@ -2413,6 +2421,7 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setCharInView(String alphabet) {
+        vibrator.vibrate(vibrationTime);
         if (row == 1) {
             if (current == 1) {
                 binding.row11.setText(alphabet);
