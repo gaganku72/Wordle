@@ -45,8 +45,18 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void addBooleanKey(String key, boolean data) {
+        editor.putBoolean(key, data);
+        editor.commit();
+    }
+
     public String getStringKey(String key) {
         String result = userSession.getString(key, "");
+        return result;
+    }
+
+    public boolean getBooleanKey(String key) {
+        boolean result = userSession.getBoolean(key, false);
         return result;
     }
 
@@ -55,7 +65,19 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void clearGameModeSession(String gameMode) {
+        if (gameMode.equalsIgnoreCase("classic")) {
+            addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, "");
+            addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
+            addStringKey(Params.KEY_LAST_CLASSIC_ROW, "");
+        } else {
+            addStringKey(Params.KEY_LAST_DAILY_ANSWER, "");
+            addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
+            addStringKey(Params.KEY_LAST_DAILY_ROW, "");
+        }
+    }
+
     public static String getEmail() {
-        return(userSession.getString(Params.KEY_EMAIL, ""));
+        return (userSession.getString(Params.KEY_EMAIL, ""));
     }
 }
