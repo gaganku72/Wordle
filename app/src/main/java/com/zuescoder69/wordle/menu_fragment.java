@@ -123,6 +123,20 @@ public class menu_fragment extends BaseFragment {
             }
             return true;
         });
+
+        binding.statsBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.dailyBtn.startAnimation(scaleUp);
+                if (!isForceUpdate) {
+                    Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_statsFragment);
+                } else {
+                    showToast("App Update REQUIRED");
+                }
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.dailyBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
     }
 
     private void showToast(String msg) {
