@@ -33,6 +33,13 @@
             app:popExitAnim="@anim/slide_out_right"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"/>
+        <action
+            android:id="@+id/action_menu_fragment_to_statsFragment"
+            app:destination="@id/statsFragment"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"/>
     </fragment>
     <fragment
         android:id="@+id/gameFragment"
@@ -58,4 +65,19 @@
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"/>
     </fragment>
+    <fragment
+        android:id="@+id/statsFragment"
+        android:name="com.zuescoder69.wordle.stats.StatsFragment"
+        android:label="fragment_stats"
+        tools:layout="@layout/fragment_stats" />
+    <fragment
+        android:id="@+id/classicStatsFragment"
+        android:name="com.zuescoder69.wordle.stats.ClassicStatsFragment"
+        android:label="fragment_classic_stats"
+        tools:layout="@layout/fragment_classic_stats" />
+    <fragment
+        android:id="@+id/dailyStatsFragment"
+        android:name="com.zuescoder69.wordle.stats.DailyStatsFragment"
+        android:label="fragment_daily_stats"
+        tools:layout="@layout/fragment_daily_stats" />
 </navigation>

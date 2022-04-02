@@ -61,13 +61,14 @@ public class menu_fragment extends BaseFragment {
 
     private void getInitialData() {
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("AppData");
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {};
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                     CommonValues.versionCodeFirebase = (String) map.get("VersionCode");
+                    CommonValues.comeTomorrowMsg = (String) map.get("ComeTomorrowMsg");
                     String toShowAd = (String) map.get("ShowAd");
                     if (toShowAd.equalsIgnoreCase("true")) {
                         CommonValues.isShowAd = true;
@@ -115,6 +116,20 @@ public class menu_fragment extends BaseFragment {
                     Bundle bundle = new Bundle();
                     bundle.putString("gameMode", "daily");
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_gameFragment, bundle);
+                } else {
+                    showToast("App Update REQUIRED");
+                }
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.dailyBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
+
+        binding.statsBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.dailyBtn.startAnimation(scaleUp);
+                if (!isForceUpdate) {
+                    Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_statsFragment);
                 } else {
                     showToast("App Update REQUIRED");
                 }

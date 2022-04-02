@@ -64,6 +64,9 @@ public class GameFragment extends BaseFragment {
     private ArrayList<RowModel> rowsList;
     private Vibrator vibrator;
     private long vibrationTime = 80;
+    private final String classic = Params.CLASSIC_GAME_MODE;
+    private final String daily = Params.DAILY_GAME_MODE;
+    private boolean isPreviousGame;
 
     public GameFragment() {
         // Required empty public constructor
@@ -102,8 +105,7 @@ public class GameFragment extends BaseFragment {
     }
 
     private void getPreviousGameData() {
-        boolean isPreviousGame;
-        if (gameMode.equalsIgnoreCase("classic")) {
+        if (gameMode.equalsIgnoreCase(classic)) {
             isPreviousGame = sessionManager.getBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME);
         } else {
             isPreviousGame = sessionManager.getBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME);
@@ -111,7 +113,7 @@ public class GameFragment extends BaseFragment {
 
         if (isPreviousGame) {
             int lastRow;
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 answer = sessionManager.getStringKey(Params.KEY_LAST_CLASSIC_ANSWER);
                 String lastRowString = sessionManager.getStringKey(Params.KEY_LAST_CLASSIC_ROW);
                 lastRow = Integer.parseInt(lastRowString);
@@ -120,7 +122,7 @@ public class GameFragment extends BaseFragment {
                 String lastRowString = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ROW);
                 lastRow = Integer.parseInt(lastRowString);
             }
-
+            Log.d(TAG, "getPreviousGameData: " + answer);
             for (int i = 1; i <= lastRow; i++) {
                 Cursor cursor = dbHandler.readRowFromDB(i, gameMode);
                 while (cursor.moveToNext()) {
@@ -178,8 +180,8 @@ public class GameFragment extends BaseFragment {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 if (dataSnapshot.exists()) {
-                                    if (gameMode.equalsIgnoreCase("classic")) {
-                                        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
+                                    if (gameMode.equalsIgnoreCase(classic)) {
+                                        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
                                         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -248,8 +250,8 @@ public class GameFragment extends BaseFragment {
                                             public void onCancelled(@NonNull DatabaseError databaseError) {
                                             }
                                         });
-                                    } else if (gameMode.equalsIgnoreCase("daily")) {
-                                        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
+                                    } else if (gameMode.equalsIgnoreCase(daily)) {
+                                        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(daily).child(currentDate);
                                         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -275,7 +277,7 @@ public class GameFragment extends BaseFragment {
                                                         }
                                                     });
                                                 } else {
-                                                    showToast("Ab kal ana");
+                                                    showToast(CommonValues.comeTomorrowMsg);
                                                     Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
                                                 }
                                             }
@@ -368,6 +370,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnQ.startAnimation(scaleUp);
                 setCharInView("Q");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnQ.startAnimation(scaleDown);
             }
@@ -378,6 +381,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnW.startAnimation(scaleUp);
                 setCharInView("W");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnW.startAnimation(scaleDown);
             }
@@ -388,6 +392,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnE.startAnimation(scaleUp);
                 setCharInView("E");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnE.startAnimation(scaleDown);
             }
@@ -398,6 +403,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnR.startAnimation(scaleUp);
                 setCharInView("R");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnR.startAnimation(scaleDown);
             }
@@ -408,6 +414,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnT.startAnimation(scaleUp);
                 setCharInView("T");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnT.startAnimation(scaleDown);
             }
@@ -418,6 +425,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnY.startAnimation(scaleUp);
                 setCharInView("Y");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnY.startAnimation(scaleDown);
             }
@@ -428,6 +436,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnU.startAnimation(scaleUp);
                 setCharInView("U");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnU.startAnimation(scaleDown);
             }
@@ -438,6 +447,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnI.startAnimation(scaleUp);
                 setCharInView("I");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnI.startAnimation(scaleDown);
             }
@@ -448,6 +458,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnO.startAnimation(scaleUp);
                 setCharInView("O");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnO.startAnimation(scaleDown);
             }
@@ -458,6 +469,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnP.startAnimation(scaleUp);
                 setCharInView("P");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnP.startAnimation(scaleDown);
             }
@@ -469,6 +481,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnA.startAnimation(scaleUp);
                 setCharInView("A");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnA.startAnimation(scaleDown);
             }
@@ -479,6 +492,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnS.startAnimation(scaleUp);
                 setCharInView("S");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnS.startAnimation(scaleDown);
             }
@@ -489,6 +503,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnD.startAnimation(scaleUp);
                 setCharInView("D");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnD.startAnimation(scaleDown);
             }
@@ -499,6 +514,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnF.startAnimation(scaleUp);
                 setCharInView("F");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnF.startAnimation(scaleDown);
             }
@@ -509,6 +525,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnG.startAnimation(scaleUp);
                 setCharInView("G");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnG.startAnimation(scaleDown);
             }
@@ -519,6 +536,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnH.startAnimation(scaleUp);
                 setCharInView("H");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnH.startAnimation(scaleDown);
             }
@@ -529,6 +547,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnJ.startAnimation(scaleUp);
                 setCharInView("J");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnJ.startAnimation(scaleDown);
             }
@@ -539,6 +558,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnK.startAnimation(scaleUp);
                 setCharInView("K");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnK.startAnimation(scaleDown);
             }
@@ -549,6 +569,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnL.startAnimation(scaleUp);
                 setCharInView("L");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnL.startAnimation(scaleDown);
             }
@@ -560,6 +581,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnZ.startAnimation(scaleUp);
                 setCharInView("Z");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnZ.startAnimation(scaleDown);
             }
@@ -570,6 +592,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnX.startAnimation(scaleUp);
                 setCharInView("X");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnX.startAnimation(scaleDown);
             }
@@ -580,6 +603,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnC.startAnimation(scaleUp);
                 setCharInView("C");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnC.startAnimation(scaleDown);
             }
@@ -590,6 +614,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnV.startAnimation(scaleUp);
                 setCharInView("V");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnV.startAnimation(scaleDown);
             }
@@ -600,6 +625,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnB.startAnimation(scaleUp);
                 setCharInView("B");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnB.startAnimation(scaleDown);
             }
@@ -610,6 +636,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnN.startAnimation(scaleUp);
                 setCharInView("N");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnN.startAnimation(scaleDown);
             }
@@ -620,6 +647,7 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnM.startAnimation(scaleUp);
                 setCharInView("M");
+                vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnM.startAnimation(scaleDown);
             }
@@ -1464,9 +1492,9 @@ public class GameFragment extends BaseFragment {
                     binding.lose.setVisibility(View.VISIBLE);
                     Handler handler1 = new Handler();
                     handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase("classic")) {
+                        if (gameMode.equalsIgnoreCase(classic)) {
                             Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", "classic");
+                            bundle.putString("gameMode", classic);
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
                         } else {
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
@@ -1748,9 +1776,9 @@ public class GameFragment extends BaseFragment {
                     binding.lose.setVisibility(View.VISIBLE);
                     Handler handler1 = new Handler();
                     handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase("classic")) {
+                        if (gameMode.equalsIgnoreCase(classic)) {
                             Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", "classic");
+                            bundle.putString("gameMode", classic);
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
                         } else {
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
@@ -1838,37 +1866,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row1");
                     binding.row15.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -1912,37 +1910,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row2");
                     binding.row25.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -1986,37 +1954,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row3");
                     binding.row35.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -2060,37 +1998,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row4");
                     binding.row45.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -2134,37 +2042,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row5");
                     binding.row55.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -2208,37 +2086,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (currentWord.equalsIgnoreCase(answer)) {
-                        dbHandler.dropTable(gameMode);
-                        sessionManager.clearGameModeSession(gameMode);
-                        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.gameFragment.setEnabled(false);
-                        binding.victory.setVisibility(View.VISIBLE);
-                        if (gameMode.equalsIgnoreCase("daily")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Daily").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(currentDate, "done");
-                            databaseReference.updateChildren(setValues);
-                        } else if (gameMode.equalsIgnoreCase("classic")) {
-                            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("Classic").child(currentDate);
-                            Map setValues = new HashMap();
-                            setValues.put(wordInDB + wordId, "done");
-                            databaseReference.updateChildren(setValues);
-                        }
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                if (gameMode.equalsIgnoreCase("classic")) {
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("gameMode", "classic");
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                } else {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-                    }
+                    index5("row6");
                     binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row65.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -2247,8 +2095,139 @@ public class GameFragment extends BaseFragment {
         }
     }
 
+    private void index5(String rowLocal) {
+        if (currentWord.equalsIgnoreCase(answer)) {
+            dbHandler.dropTable(gameMode);
+            sessionManager.clearGameModeSession(gameMode);
+            getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            binding.gameFragment.setEnabled(false);
+            binding.victory.setVisibility(View.VISIBLE);
+            if (gameMode.equalsIgnoreCase(daily)) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(daily).child(currentDate);
+                Map setValues = new HashMap();
+                setValues.put(currentDate, "done");
+                databaseReference.updateChildren(setValues);
+
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(daily);
+                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                            };
+                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                            int score = 0;
+                            int totalPlayed = 0;
+//                            int currentStreak = 0;
+//                            int maxStreak = 0;
+
+                            if (map.containsKey(rowLocal)) {
+                                score = Integer.parseInt((String) map.get(rowLocal));
+                            }
+                            if (map.containsKey("totalPlayed")) {
+                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
+                            }
+//                            if (map.containsKey("currentStreak")) {
+//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                            }
+//                            if (map.containsKey("maxStreak")) {
+//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            }
+
+                            Map setValues1 = new HashMap();
+                            setValues1.put(rowLocal, score + 1 + "");
+                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
+//                            setValues1.put("currentStreak", currentStreak + 1 + "");
+//                            setValues1.put("maxStreak", maxStreak + 1 + "");
+                            databaseReference.updateChildren(setValues1);
+                        } else {
+                            Map setValues1 = new HashMap();
+                            setValues1.put(rowLocal, "1");
+                            setValues1.put("totalPlayed", "1");
+//                            setValues1.put("currentStreak", "1");
+//                            setValues1.put("maxStreak", "1");
+                            databaseReference.updateChildren(setValues1);
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+
+            } else if (gameMode.equalsIgnoreCase(classic)) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+                Map setValues = new HashMap();
+                setValues.put(wordInDB + wordId, "done");
+                databaseReference.updateChildren(setValues);
+
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(classic);
+                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                            };
+                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                            int score = 0;
+                            int totalPlayed = 0;
+//                            int currentStreak = 0;
+//                            int maxStreak = 0;
+
+                            if (map.containsKey(rowLocal)) {
+                                score = Integer.parseInt((String) map.get(rowLocal));
+                            }
+                            if (map.containsKey("totalPlayed")) {
+                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
+                            }
+//                            if (map.containsKey("currentStreak")) {
+//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                            }
+//                            if (map.containsKey("maxStreak")) {
+//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            }
+                            Map setValues1 = new HashMap();
+                            setValues1.put(rowLocal, score + 1 + "");
+                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
+//                            setValues1.put("currentStreak", currentStreak + 1 + "");
+//                            setValues1.put("maxStreak", maxStreak + 1 + "");
+                            databaseReference.updateChildren(setValues1);
+                        } else {
+                            Map setValues1 = new HashMap();
+                            setValues1.put(rowLocal, "1");
+                            setValues1.put("totalPlayed", "1");
+//                            setValues1.put("currentStreak", "1");
+//                            setValues1.put("maxStreak", "1");
+                            databaseReference.updateChildren(setValues1);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
+            Handler handler1 = new Handler();
+            handler1.postDelayed(() -> {
+                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (gameMode.equalsIgnoreCase(classic)) {
+                        Bundle bundle = new Bundle();
+                        bundle.putString("gameMode", classic);
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                    } else {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                    }
+                }
+            }, 5000);
+        }
+    }
+
     private void setDataInDB(Integer row) {
-        if (gameMode.equalsIgnoreCase("classic")) {
+        if (gameMode.equalsIgnoreCase(classic)) {
             sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, true);
         } else {
             sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, true);
@@ -2261,7 +2240,7 @@ public class GameFragment extends BaseFragment {
             letter3 = binding.row13.getText().toString().toUpperCase().trim();
             letter4 = binding.row14.getText().toString().toUpperCase().trim();
             letter5 = binding.row15.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "1");
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "1");
@@ -2272,7 +2251,7 @@ public class GameFragment extends BaseFragment {
             letter3 = binding.row23.getText().toString().toUpperCase().trim();
             letter4 = binding.row24.getText().toString().toUpperCase().trim();
             letter5 = binding.row25.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "2");
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "2");
@@ -2283,7 +2262,7 @@ public class GameFragment extends BaseFragment {
             letter3 = binding.row33.getText().toString().toUpperCase().trim();
             letter4 = binding.row34.getText().toString().toUpperCase().trim();
             letter5 = binding.row35.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "3");
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "3");
@@ -2294,7 +2273,7 @@ public class GameFragment extends BaseFragment {
             letter3 = binding.row43.getText().toString().toUpperCase().trim();
             letter4 = binding.row44.getText().toString().toUpperCase().trim();
             letter5 = binding.row45.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "4");
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "4");
@@ -2305,7 +2284,7 @@ public class GameFragment extends BaseFragment {
             letter3 = binding.row53.getText().toString().toUpperCase().trim();
             letter4 = binding.row54.getText().toString().toUpperCase().trim();
             letter5 = binding.row55.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "5");
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "5");
@@ -2317,7 +2296,7 @@ public class GameFragment extends BaseFragment {
             letter4 = binding.row64.getText().toString().toUpperCase().trim();
             letter5 = binding.row65.getText().toString().toUpperCase().trim();
 
-            if (gameMode.equalsIgnoreCase("classic")) {
+            if (gameMode.equalsIgnoreCase(classic)) {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "6");
                 sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
             } else {
@@ -2326,7 +2305,7 @@ public class GameFragment extends BaseFragment {
             }
             dbHandler.dropTable(gameMode);
         }
-        if (gameMode.equalsIgnoreCase("classic")) {
+        if (gameMode.equalsIgnoreCase(classic)) {
             sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
         } else {
             sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
@@ -2421,7 +2400,6 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setCharInView(String alphabet) {
-        vibrator.vibrate(vibrationTime);
         if (row == 1) {
             if (current == 1) {
                 binding.row11.setText(alphabet);
