@@ -10,8 +10,8 @@
     <color name="mainbg">#FF000000</color>
     <color name="main_second">#565656</color>
     <color name="stroke_color">#707070</color>
-    <color name="correct_color">#009150</color>
-    <color name="has_color">#FFBF00</color>
+    <color name="correct_color">#12C96B</color>
+    <color name="has_color">#FFB800</color>
     <color name="keyboard_button">#848484</color>
 
 </resources>

@@ -31,5 +31,5 @@ public class Params {
     public static final String KEY_LAST_GAME_MODE = "lastGameMode";
 
     public static final String CLASSIC_GAME_MODE = "classic";
-    public static final String DAILY_GAME_MODE = "classic";
+    public static final String DAILY_GAME_MODE = "daily";
 }

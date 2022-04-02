@@ -1,8 +1,11 @@
 package com.zuescoder69.wordle.models;
 
+import androidx.annotation.Keep;
+
 /**
  * Created by Gagan Kumar on 22/03/22.
  */
+@Keep
 public class RowModel {
     String row;
     String letter1;

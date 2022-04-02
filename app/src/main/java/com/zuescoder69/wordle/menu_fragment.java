@@ -61,13 +61,14 @@ public class menu_fragment extends BaseFragment {
 
     private void getInitialData() {
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("AppData");
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {};
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                     CommonValues.versionCodeFirebase = (String) map.get("VersionCode");
+                    CommonValues.comeTomorrowMsg = (String) map.get("ComeTomorrowMsg");
                     String toShowAd = (String) map.get("ShowAd");
                     if (toShowAd.equalsIgnoreCase("true")) {
                         CommonValues.isShowAd = true;

@@ -122,7 +122,7 @@ public class GameFragment extends BaseFragment {
                 String lastRowString = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ROW);
                 lastRow = Integer.parseInt(lastRowString);
             }
-
+            Log.d(TAG, "getPreviousGameData: " + answer);
             for (int i = 1; i <= lastRow; i++) {
                 Cursor cursor = dbHandler.readRowFromDB(i, gameMode);
                 while (cursor.moveToNext()) {
@@ -277,7 +277,7 @@ public class GameFragment extends BaseFragment {
                                                         }
                                                     });
                                                 } else {
-                                                    showToast("Ab kal ana");
+                                                    showToast(CommonValues.comeTomorrowMsg);
                                                     Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
                                                 }
                                             }
@@ -2118,8 +2118,8 @@ public class GameFragment extends BaseFragment {
                             Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                             int score = 0;
                             int totalPlayed = 0;
-                            int currentStreak = 0;
-                            int maxStreak = 0;
+//                            int currentStreak = 0;
+//                            int maxStreak = 0;
 
                             if (map.containsKey(rowLocal)) {
                                 score = Integer.parseInt((String) map.get(rowLocal));
@@ -2127,25 +2127,25 @@ public class GameFragment extends BaseFragment {
                             if (map.containsKey("totalPlayed")) {
                                 totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
                             }
-                            if (map.containsKey("currentStreak")) {
-                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
-                            }
-                            if (map.containsKey("maxStreak")) {
-                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
-                            }
+//                            if (map.containsKey("currentStreak")) {
+//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                            }
+//                            if (map.containsKey("maxStreak")) {
+//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            }
 
                             Map setValues1 = new HashMap();
                             setValues1.put(rowLocal, score + 1 + "");
                             setValues1.put("totalPlayed", totalPlayed + 1 + "");
-                            setValues1.put("currentStreak", currentStreak + 1 + "");
-                            setValues1.put("maxStreak", maxStreak + 1 + "");
+//                            setValues1.put("currentStreak", currentStreak + 1 + "");
+//                            setValues1.put("maxStreak", maxStreak + 1 + "");
                             databaseReference.updateChildren(setValues1);
                         } else {
                             Map setValues1 = new HashMap();
                             setValues1.put(rowLocal, "1");
                             setValues1.put("totalPlayed", "1");
-                            setValues1.put("currentStreak", "1");
-                            setValues1.put("maxStreak", "1");
+//                            setValues1.put("currentStreak", "1");
+//                            setValues1.put("maxStreak", "1");
                             databaseReference.updateChildren(setValues1);
                         }
 
@@ -2173,8 +2173,8 @@ public class GameFragment extends BaseFragment {
                             Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                             int score = 0;
                             int totalPlayed = 0;
-                            int currentStreak = 0;
-                            int maxStreak = 0;
+//                            int currentStreak = 0;
+//                            int maxStreak = 0;
 
                             if (map.containsKey(rowLocal)) {
                                 score = Integer.parseInt((String) map.get(rowLocal));
@@ -2182,24 +2182,24 @@ public class GameFragment extends BaseFragment {
                             if (map.containsKey("totalPlayed")) {
                                 totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
                             }
-                            if (map.containsKey("currentStreak")) {
-                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
-                            }
-                            if (map.containsKey("maxStreak")) {
-                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
-                            }
+//                            if (map.containsKey("currentStreak")) {
+//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                            }
+//                            if (map.containsKey("maxStreak")) {
+//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            }
                             Map setValues1 = new HashMap();
                             setValues1.put(rowLocal, score + 1 + "");
                             setValues1.put("totalPlayed", totalPlayed + 1 + "");
-                            setValues1.put("currentStreak", currentStreak + 1 + "");
-                            setValues1.put("maxStreak", maxStreak + 1 + "");
+//                            setValues1.put("currentStreak", currentStreak + 1 + "");
+//                            setValues1.put("maxStreak", maxStreak + 1 + "");
                             databaseReference.updateChildren(setValues1);
                         } else {
                             Map setValues1 = new HashMap();
                             setValues1.put(rowLocal, "1");
                             setValues1.put("totalPlayed", "1");
-                            setValues1.put("currentStreak", "1");
-                            setValues1.put("maxStreak", "1");
+//                            setValues1.put("currentStreak", "1");
+//                            setValues1.put("maxStreak", "1");
                             databaseReference.updateChildren(setValues1);
                         }
                     }
