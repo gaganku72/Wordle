@@ -15,6 +15,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "1090659915107-1ki29o7s7kk9lqnbe6u25bi900g2eqi0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zuescoder69.wordle",
+            "certificate_hash": "a14b95c1acecc87e12d50fdcc941e9e7a69c87d3"
+          }
+        },
+        {
+          "client_id": "1090659915107-3c2t2punr905bl5mcbt2phfftuaqcntg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zuescoder69.wordle",
+            "certificate_hash": "fd42c681b00d8d8f55f23b8dccda0e17a1f9b237"
+          }
+        },
+        {
           "client_id": "1090659915107-c2efl23hoob155f4rhgirsjvltme21op.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
