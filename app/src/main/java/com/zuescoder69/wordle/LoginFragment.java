@@ -68,6 +68,7 @@ public class LoginFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        binding.progressBar.setVisibility(View.GONE);
         NavHostFragment navHostFragment = (NavHostFragment) getActivity().getSupportFragmentManager()
                 .findFragmentById(R.id.mainFragment);
         navCo = navHostFragment.getNavController();
@@ -101,11 +102,12 @@ public class LoginFragment extends BaseFragment {
             if (result.getResultCode() == Activity.RESULT_OK) {
                 Intent intent = result.getData();
                 try {
+                    binding.progressBar.setVisibility(View.VISIBLE);
                     Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(intent);
                     handleSignInResult(task);
                 } catch (Exception e) {
-                    Toast.makeText(getContext(), "3", Toast.LENGTH_SHORT).show();
-                    Log.i("LoginFragment", e.getMessage());
+                    Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.d("LoginFragment", e.getMessage());
                 }
 
             }
@@ -118,7 +120,7 @@ public class LoginFragment extends BaseFragment {
             Log.d("LoginFragment", "Login Success");
             FirebaseGoogleAuth(acc);
         } catch (ApiException e) {
-            Log.e("LoginFragment", "Exception: " + Log.getStackTraceString(e));
+            Log.d("LoginFragment", "Exception: " + Log.getStackTraceString(e));
             showToast("Login Failed");
             FirebaseGoogleAuth(null);
         }
@@ -129,6 +131,7 @@ public class LoginFragment extends BaseFragment {
         mAuth.signInWithCredential(authCredential)
                 .addOnCompleteListener(getActivity(), task -> {
                     try {
+                        binding.progressBar.setVisibility(View.VISIBLE);
                         if (task.isSuccessful()) {
                             boolean isNew = task.getResult().getAdditionalUserInfo().isNewUser();
                             String userfirebaseid = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -152,6 +155,7 @@ public class LoginFragment extends BaseFragment {
 
                             }
                             new Handler().postDelayed(() -> {
+                                binding.progressBar.setVisibility(View.GONE);
                                 showToast("Welcome " + userName);
                                 navCo.navigate(R.id.action_loginFragment_to_menu_fragment);
                             }, 2000);
@@ -160,7 +164,8 @@ public class LoginFragment extends BaseFragment {
                             Log.d("LoginFragment", "UnSuccessfull");
                         }
                     } catch (Exception e) {
-                        Log.e("LoginFragment", "Exception: " + Log.getStackTraceString(e));
+                        Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.d("LoginFragment", "Exception: " + Log.getStackTraceString(e));
                     }
 
 
