@@ -11,6 +11,7 @@ public class CommonValues {
     public static String interVideoId = "ca-app-pub-2645963896743153/2125349740";
     public static String currentFragment = "";
     public static boolean isShowAd = false;
+    public static String comeTomorrowMsg = "Game played for today";
 
     public static final String splashScreenFragment = "splashScreenFragment";
     public static final String menuFragment = "menuFragment";
