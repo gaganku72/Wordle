@@ -22,11 +22,11 @@
                 android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:fontFamily="@font/arial_bold"
                 android:text="Wordle"
                 android:textColor="@color/white"
-                android:textSize="60sp"
+                android:textSize="32sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -42,407 +42,407 @@
 
                 <TextView
                     android:id="@+id/row1_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row1_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row1_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row1_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row1_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/row2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/row1">
 
                 <TextView
                     android:id="@+id/row2_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row2_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row2_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row2_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row2_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/row3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/row2">
 
                 <TextView
                     android:id="@+id/row3_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row3_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row3_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row3_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row3_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/row4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/row3">
 
                 <TextView
                     android:id="@+id/row4_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row4_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row4_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row4_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row4_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/row5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/row4">
 
                 <TextView
                     android:id="@+id/row5_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row5_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row5_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row5_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row5_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/row6"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/row5">
 
                 <TextView
                     android:id="@+id/row6_1"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row6_2"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row6_3"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row6_4"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/row6_5"
-                    android:layout_width="51dp"
-                    android:layout_height="56dp"
+                    android:layout_width="41dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/alphabets_bg"
                     android:fontFamily="@font/arial_bold"
                     android:gravity="center"
                     tools:text="A"
                     android:textColor="@color/white"
-                    android:textSize="32sp" />
+                    android:textSize="24sp" />
             </LinearLayout>
 
             <!--            <LinearLayout-->
@@ -816,13 +816,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="Q"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_a"
                 app:layout_constraintEnd_toStartOf="@+id/btn_w"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -832,13 +832,13 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="W"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_a"
                 app:layout_constraintEnd_toStartOf="@+id/btn_e"
                 app:layout_constraintStart_toEndOf="@+id/btn_q" />
@@ -848,13 +848,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="E"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_s"
                 app:layout_constraintEnd_toStartOf="@+id/btn_r"
                 app:layout_constraintStart_toEndOf="@+id/btn_w" />
@@ -864,13 +864,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="R"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_d"
                 app:layout_constraintEnd_toStartOf="@+id/btn_t"
                 app:layout_constraintStart_toEndOf="@+id/btn_e" />
@@ -880,13 +880,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="T"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_f"
                 app:layout_constraintEnd_toStartOf="@+id/btn_y"
                 app:layout_constraintStart_toEndOf="@+id/btn_r" />
@@ -896,13 +896,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="Y"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_g"
                 app:layout_constraintEnd_toStartOf="@+id/btn_u"
                 app:layout_constraintStart_toEndOf="@+id/btn_t" />
@@ -912,13 +912,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="U"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_h"
                 app:layout_constraintEnd_toStartOf="@+id/btn_i"
                 app:layout_constraintStart_toEndOf="@+id/btn_y" />
@@ -928,13 +928,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="I"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_j"
                 app:layout_constraintEnd_toStartOf="@+id/btn_o"
                 app:layout_constraintStart_toEndOf="@+id/btn_u" />
@@ -944,13 +944,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="O"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_k"
                 app:layout_constraintEnd_toStartOf="@+id/btn_p"
                 app:layout_constraintStart_toEndOf="@+id/btn_i" />
@@ -960,13 +960,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="P"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_l"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/btn_o" />
@@ -977,13 +977,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="A"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_enter"
                 app:layout_constraintEnd_toStartOf="@+id/btn_s"
                 app:layout_constraintStart_toStartOf="@+id/btn_q" />
@@ -993,13 +993,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="S"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_enter"
                 app:layout_constraintEnd_toStartOf="@+id/btn_d"
                 app:layout_constraintStart_toEndOf="@+id/btn_a" />
@@ -1009,13 +1009,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="D"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_x"
                 app:layout_constraintEnd_toStartOf="@+id/btn_f"
                 app:layout_constraintStart_toEndOf="@+id/btn_s" />
@@ -1025,13 +1025,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="F"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_c"
                 app:layout_constraintEnd_toStartOf="@+id/btn_g"
                 app:layout_constraintStart_toEndOf="@+id/btn_d" />
@@ -1041,13 +1041,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="G"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_v"
                 app:layout_constraintEnd_toStartOf="@+id/btn_h"
                 app:layout_constraintStart_toEndOf="@+id/btn_f" />
@@ -1057,13 +1057,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="H"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_b"
                 app:layout_constraintEnd_toStartOf="@+id/btn_j"
                 app:layout_constraintStart_toEndOf="@+id/btn_g" />
@@ -1073,13 +1073,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="J"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_n"
                 app:layout_constraintEnd_toStartOf="@+id/btn_k"
                 app:layout_constraintStart_toEndOf="@+id/btn_h" />
@@ -1089,13 +1089,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="K"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_m"
                 app:layout_constraintEnd_toStartOf="@+id/btn_l"
                 app:layout_constraintStart_toEndOf="@+id/btn_j" />
@@ -1105,20 +1105,20 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="12dp"
                 android:background="@drawable/keyboard_bg"
                 android:fontFamily="@font/arial_bold"
                 android:gravity="center"
                 android:text="L"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/btn_cancel"
                 app:layout_constraintEnd_toEndOf="@+id/btn_p"
                 app:layout_constraintStart_toEndOf="@+id/btn_k" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_enter"
-                android:layout_width="55dp"
+                android:layout_width="45dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
@@ -1127,7 +1127,7 @@
                 android:gravity="center"
                 android:text="Enter"
                 android:textColor="@color/white"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_z"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -1142,7 +1142,7 @@
                 android:gravity="center"
                 android:text="Z"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_x"
                 app:layout_constraintStart_toEndOf="@+id/btn_enter"
@@ -1158,7 +1158,7 @@
                 android:gravity="center"
                 android:text="X"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_c"
                 app:layout_constraintStart_toEndOf="@+id/btn_z" />
@@ -1173,7 +1173,7 @@
                 android:gravity="center"
                 android:text="C"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_v"
                 app:layout_constraintStart_toEndOf="@+id/btn_x" />
@@ -1188,7 +1188,7 @@
                 android:gravity="center"
                 android:text="V"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_b"
                 app:layout_constraintStart_toEndOf="@+id/btn_c" />
@@ -1203,7 +1203,7 @@
                 android:gravity="center"
                 android:text="B"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_n"
                 app:layout_constraintStart_toEndOf="@+id/btn_v" />
@@ -1218,7 +1218,7 @@
                 android:gravity="center"
                 android:text="N"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_m"
                 app:layout_constraintStart_toEndOf="@+id/btn_b" />
@@ -1233,14 +1233,14 @@
                 android:gravity="center"
                 android:text="M"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/view"
                 app:layout_constraintEnd_toStartOf="@+id/btn_cancel"
                 app:layout_constraintStart_toEndOf="@+id/btn_n" />
 
             <ImageView
                 android:id="@+id/btn_cancel"
-                android:layout_width="55dp"
+                android:layout_width="45dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/keyboard_bg"
