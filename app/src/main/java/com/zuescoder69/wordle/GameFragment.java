@@ -2396,6 +2396,20 @@ public class GameFragment extends BaseFragment {
             } else {
                 return;
             }
+        } else if (row == 6) {
+            if (current == 1) {
+                binding.row61.setText("");
+            } else if (current == 2) {
+                binding.row62.setText("");
+            } else if (current == 3) {
+                binding.row63.setText("");
+            } else if (current == 4) {
+                binding.row64.setText("");
+            } else if (current == 5) {
+                binding.row65.setText("");
+            } else {
+                return;
+            }
         }
     }
 
