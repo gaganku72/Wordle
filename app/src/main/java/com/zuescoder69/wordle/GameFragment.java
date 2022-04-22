@@ -2,6 +2,7 @@ package com.zuescoder69.wordle;
 
 import static android.content.Context.VIBRATOR_SERVICE;
 
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -66,7 +68,7 @@ public class GameFragment extends BaseFragment {
     private long vibrationTime = 80;
     private final String classic = Params.CLASSIC_GAME_MODE;
     private final String daily = Params.DAILY_GAME_MODE;
-    private boolean isPreviousGame;
+    private boolean isPreviousGame, isEnterEnabled = true;
 
     public GameFragment() {
         // Required empty public constructor
@@ -658,9 +660,11 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnEnter.startAnimation(scaleUp);
                 vibrator.vibrate(vibrationTime);
-                if (current == 6) {
-                    if (row < 7) {
-                        submitWord();
+                if (isEnterEnabled) {
+                    if (current == 6) {
+                        if (row < 7) {
+                            submitWord();
+                        }
                     }
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
@@ -682,6 +686,7 @@ public class GameFragment extends BaseFragment {
     }
 
     private void submitWord() {
+        isEnterEnabled = false;
         ArrayList<String> list = new ArrayList<>();
         currentWord = getWord();
         databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("GuessWords");
@@ -696,7 +701,67 @@ public class GameFragment extends BaseFragment {
                             list.add(s);
                         }
                         wordleLogic(list);
+                        isEnterEnabled = true;
                     } else {
+                        Handler handler = new Handler();
+                        handler.postDelayed(() -> {
+                            ObjectAnimator animation = new ObjectAnimator();
+                            if (row == 1) {
+                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
+                            } else if (row == 2) {
+                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
+                            } else if (row == 3) {
+                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
+                            } else if (row == 4) {
+                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
+                            } else if (row == 5) {
+                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
+                            } else if (row == 6) {
+                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
+                            }
+                            animation.setDuration(100);
+                            animation.start();
+                        },100);
+
+                        handler.postDelayed(() -> {
+                            ObjectAnimator animation = new ObjectAnimator();
+                            if (row == 1) {
+                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
+                            } else if (row == 2) {
+                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
+                            } else if (row == 3) {
+                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
+                            } else if (row == 4) {
+                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
+                            } else if (row == 5) {
+                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
+                            } else if (row == 6) {
+                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
+                            }
+                            animation.setDuration(100);
+                            animation.start();
+                        },200);
+
+                        handler.postDelayed(() -> {
+                            ObjectAnimator animation = new ObjectAnimator();
+                            if (row == 1) {
+                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
+                            } else if (row == 2) {
+                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
+                            } else if (row == 3) {
+                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
+                            } else if (row == 4) {
+                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
+                            } else if (row == 5) {
+                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
+                            } else if (row == 6) {
+                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
+                            }
+                            animation.setDuration(100);
+                            animation.start();
+                            isEnterEnabled = true;
+                        },300);
+                        vibrator.vibrate(300);
                         showToast("Not in word list");
                     }
                 }
