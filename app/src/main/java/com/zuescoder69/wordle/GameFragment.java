@@ -16,7 +16,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -65,10 +64,10 @@ public class GameFragment extends BaseFragment {
     private SessionManager sessionManager;
     private ArrayList<RowModel> rowsList;
     private Vibrator vibrator;
-    private long vibrationTime = 80;
+    private final long vibrationTime = 80;
     private final String classic = Params.CLASSIC_GAME_MODE;
     private final String daily = Params.DAILY_GAME_MODE;
-    private boolean isPreviousGame, isEnterEnabled = true;
+    private boolean isEnterEnabled = true;
 
     public GameFragment() {
         // Required empty public constructor
@@ -87,7 +86,7 @@ public class GameFragment extends BaseFragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding = FragmentGameBinding.inflate(inflater, container, false);
@@ -107,6 +106,7 @@ public class GameFragment extends BaseFragment {
     }
 
     private void getPreviousGameData() {
+        boolean isPreviousGame;
         if (gameMode.equalsIgnoreCase(classic)) {
             isPreviousGame = sessionManager.getBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME);
         } else {
@@ -721,7 +721,7 @@ public class GameFragment extends BaseFragment {
                             }
                             animation.setDuration(100);
                             animation.start();
-                        },100);
+                        }, 100);
 
                         handler.postDelayed(() -> {
                             ObjectAnimator animation = new ObjectAnimator();
@@ -740,7 +740,7 @@ public class GameFragment extends BaseFragment {
                             }
                             animation.setDuration(100);
                             animation.start();
-                        },200);
+                        }, 200);
 
                         handler.postDelayed(() -> {
                             ObjectAnimator animation = new ObjectAnimator();
@@ -760,7 +760,7 @@ public class GameFragment extends BaseFragment {
                             animation.setDuration(100);
                             animation.start();
                             isEnterEnabled = true;
-                        },300);
+                        }, 300);
                         vibrator.vibrate(300);
                         showToast("Not in word list");
                     }
