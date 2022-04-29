@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import com.zuescoder69.wordle.params.Params;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Gagan Kumar on 12/01/22.
@@ -79,5 +82,19 @@ public class SessionManager {
 
     public static String getEmail() {
         return (userSession.getString(Params.KEY_EMAIL, ""));
+    }
+
+    public void addGuessWordList(String key, List<String> wordList) {
+        Set<String> wordSet = new HashSet<String>(wordList);
+        editor.putStringSet(key, wordSet);
+        editor.commit();
+    }
+
+    public boolean isWordCorrect(String word) {
+        Set<String> wordList = userSession.getStringSet(Params.GUESS_WORD_LIST, null);
+        if (wordList.contains(word.toLowerCase())) {
+            return true;
+        }
+        return false;
     }
 }
