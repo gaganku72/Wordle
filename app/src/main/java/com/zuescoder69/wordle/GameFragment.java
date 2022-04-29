@@ -21,6 +21,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -46,27 +52,35 @@ import java.util.Map;
 import java.util.Random;
 
 public class GameFragment extends BaseFragment {
-    private static final String TAG = "DEMON";
+
+    private final String TAG = "DEMON";
+    private final String wordInDB = "Word";
+    private final String classic = Params.CLASSIC_GAME_MODE;
+    private final String daily = Params.DAILY_GAME_MODE;
+    private final long vibrationTime = 80;
+
     private FragmentGameBinding binding;
+
     private int row = 1;
     private int current = 1;
+
     private String wordsCount;
     private String answer;
     private String currentWord;
-    private final String wordInDB = "Word";
     private String gameMode;
     private String currentDate;
-    private DatabaseReference databaseReference;
     private String userId;
-    private Animation scaleUp, scaleDown;
     private String wordId;
+
+    private Animation scaleUp, scaleDown;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
-    private ArrayList<RowModel> rowsList;
+    private DatabaseReference databaseReference;
     private Vibrator vibrator;
-    private final long vibrationTime = 80;
-    private final String classic = Params.CLASSIC_GAME_MODE;
-    private final String daily = Params.DAILY_GAME_MODE;
+    private InterstitialAd mInterstitialAd;
+
+    private ArrayList<RowModel> rowsList;
+
     private boolean isEnterEnabled = true;
 
     public GameFragment() {
@@ -98,11 +112,66 @@ public class GameFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         binding.victory.setVisibility(View.GONE);
         binding.lose.setVisibility(View.GONE);
+        binding.progress.setVisibility(View.VISIBLE);
+        binding.gameFragment.setVisibility(View.GONE);
         sessionManager = new SessionManager(getContext());
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
-        getPreviousGameData();
-        setupOnClicks();
-        getCurrentDate();
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            getPreviousGameData();
+            setupOnClicks();
+            getCurrentDate();
+            getAppData();
+        }, 300);
+    }
+
+    private void getAppData() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("AppData");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                    };
+                    Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                    String toShowAd = (String) map.get("ShowAd");
+                    if (toShowAd.equalsIgnoreCase("true")) {
+                        CommonValues.isShowAd = true;
+                        loadAd();
+                    } else {
+                        CommonValues.isShowAd = false;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void loadAd() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                        mInterstitialAd = interstitialAd;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        Log.i(TAG, loadAdError.getMessage());
+                        mInterstitialAd = null;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+                });
     }
 
     private void getPreviousGameData() {
@@ -663,7 +732,34 @@ public class GameFragment extends BaseFragment {
                 if (isEnterEnabled) {
                     if (current == 6) {
                         if (row < 7) {
-                            submitWord();
+                            if (mInterstitialAd != null && !CommonValues.isAdFree) {
+                                mInterstitialAd.show(getActivity());
+                                loadAd();
+                                mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                                    @Override
+                                    public void onAdDismissedFullScreenContent() {
+                                        // Called when fullscreen content is dismissed.
+                                        submitWord();
+                                        Log.d("TAG", "The ad was dismissed.");
+                                    }
+
+                                    @Override
+                                    public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                        // Called when fullscreen content failed to show.
+                                        Log.d("TAG", "The ad failed to show.");
+                                    }
+
+                                    @Override
+                                    public void onAdShowedFullScreenContent() {
+                                        // Called when fullscreen content is shown.
+                                        // Make sure to set your reference to null so you don't
+                                        // show it a second time.
+                                        Log.d("TAG", "The ad was shown.");
+                                    }
+                                });
+                            } else {
+                                submitWord();
+                            }
                         }
                     }
                 }
@@ -689,89 +785,81 @@ public class GameFragment extends BaseFragment {
         isEnterEnabled = false;
         ArrayList<String> list = new ArrayList<>();
         currentWord = getWord();
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("GuessWords");
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    if (snapshot.hasChild(currentWord.toLowerCase())) {
-                        for (int i = 0; i < currentWord.length(); i++) {
-                            char letter = currentWord.charAt(i);
-                            String s = letter + "";
-                            list.add(s);
-                        }
-                        wordleLogic(list);
-                        isEnterEnabled = true;
-                    } else {
-                        Handler handler = new Handler();
-                        handler.postDelayed(() -> {
-                            ObjectAnimator animation = new ObjectAnimator();
-                            if (row == 1) {
-                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
-                            } else if (row == 2) {
-                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
-                            } else if (row == 3) {
-                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
-                            } else if (row == 4) {
-                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
-                            } else if (row == 5) {
-                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
-                            } else if (row == 6) {
-                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
-                            }
-                            animation.setDuration(100);
-                            animation.start();
-                        }, 100);
-
-                        handler.postDelayed(() -> {
-                            ObjectAnimator animation = new ObjectAnimator();
-                            if (row == 1) {
-                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
-                            } else if (row == 2) {
-                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
-                            } else if (row == 3) {
-                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
-                            } else if (row == 4) {
-                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
-                            } else if (row == 5) {
-                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
-                            } else if (row == 6) {
-                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
-                            }
-                            animation.setDuration(100);
-                            animation.start();
-                        }, 200);
-
-                        handler.postDelayed(() -> {
-                            ObjectAnimator animation = new ObjectAnimator();
-                            if (row == 1) {
-                                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
-                            } else if (row == 2) {
-                                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
-                            } else if (row == 3) {
-                                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
-                            } else if (row == 4) {
-                                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
-                            } else if (row == 5) {
-                                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
-                            } else if (row == 6) {
-                                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
-                            }
-                            animation.setDuration(100);
-                            animation.start();
-                            isEnterEnabled = true;
-                        }, 300);
-                        vibrator.vibrate(300);
-                        showToast("Not in word list");
-                    }
-                }
+        boolean isWordCorrect = sessionManager.isWordCorrect(currentWord);
+        if (isWordCorrect) {
+            for (int i = 0; i < currentWord.length(); i++) {
+                char letter = currentWord.charAt(i);
+                String s = letter + "";
+                list.add(s);
             }
+            wordleLogic(list);
+            isEnterEnabled = true;
+        } else {
+            noWordAnimation();
+        }
+    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
+    private void noWordAnimation() {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            ObjectAnimator animation = new ObjectAnimator();
+            if (row == 1) {
+                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
+            } else if (row == 2) {
+                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
+            } else if (row == 3) {
+                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
+            } else if (row == 4) {
+                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
+            } else if (row == 5) {
+                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
+            } else if (row == 6) {
+                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
             }
-        });
+            animation.setDuration(100);
+            animation.start();
+        }, 100);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation = new ObjectAnimator();
+            if (row == 1) {
+                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
+            } else if (row == 2) {
+                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
+            } else if (row == 3) {
+                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
+            } else if (row == 4) {
+                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
+            } else if (row == 5) {
+                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
+            } else if (row == 6) {
+                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
+            }
+            animation.setDuration(100);
+            animation.start();
+        }, 200);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation = new ObjectAnimator();
+            if (row == 1) {
+                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
+            } else if (row == 2) {
+                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
+            } else if (row == 3) {
+                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
+            } else if (row == 4) {
+                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
+            } else if (row == 5) {
+                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
+            } else if (row == 6) {
+                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
+            }
+            animation.setDuration(100);
+            animation.start();
+            isEnterEnabled = true;
+        }, 300);
+        vibrator.vibrate(300);
+        showToast("Not in word list");
     }
 
     private <T> boolean containsAny(ArrayList<T> l1, ArrayList<T> l2) {

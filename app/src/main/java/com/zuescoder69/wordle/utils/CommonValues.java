@@ -6,11 +6,12 @@ package com.zuescoder69.wordle.utils;
 public class CommonValues {
     public static String versionCode = "3";
     public static String versionCodeFirebase = "3";
-    public static String rewardAdId = "ca-app-pub-2645963896743153/9258907764";
+    public static String rewardAdId = "ca-app-pub-3940256099942544/5224354917";
     public static String interNormalId = "ca-app-pub-2645963896743153/9833622836";
-    public static String interVideoId = "ca-app-pub-2645963896743153/2125349740";
+    public static String interVideoId = "ca-app-pub-3940256099942544/1033173712";
     public static String currentFragment = "";
     public static boolean isShowAd = false;
+    public static boolean isAdFree = false;
     public static String comeTomorrowMsg = "Game played for today";
 
     public static final String splashScreenFragment = "splashScreenFragment";
