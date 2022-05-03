@@ -32,6 +32,7 @@ public class Params {
 
     public static final String CLASSIC_GAME_MODE = "classic";
     public static final String DAILY_GAME_MODE = "daily";
+    public static final String MULTI_GAME_MODE = "multiplayer";
     public static final String GUESS_WORD_LIST = "guessWordList";
     public static final String GUESS_WORD_LIST_ADDED = "isGuessWordListAdded";
 }

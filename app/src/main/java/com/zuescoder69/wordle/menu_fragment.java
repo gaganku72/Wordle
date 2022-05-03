@@ -28,12 +28,16 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.zuescoder69.wordle.databinding.FragmentMenuFragmentBinding;
 import com.zuescoder69.wordle.params.Params;
-import com.zuescoder69.wordle.userData.DbHandler;
 import com.zuescoder69.wordle.userData.SessionManager;
 import com.zuescoder69.wordle.utils.CommonValues;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class menu_fragment extends BaseFragment {
@@ -65,6 +69,7 @@ public class menu_fragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         binding.progressBar.setVisibility(View.VISIBLE);
+        getCurrentDate();
         setupOnClicks();
         getInitialData();
     }
@@ -80,6 +85,7 @@ public class menu_fragment extends BaseFragment {
                         binding.progressBar.setVisibility(View.GONE);
                         binding.dailyBtn.setVisibility(View.VISIBLE);
                         binding.classicBtn.setVisibility(View.VISIBLE);
+                        binding.multiplayerBtn.setVisibility(View.VISIBLE);
                     }
 
                     @Override
@@ -89,6 +95,7 @@ public class menu_fragment extends BaseFragment {
                         binding.dailyBtn.setVisibility(View.VISIBLE);
                         binding.classicBtn.setVisibility(View.VISIBLE);
                         binding.videoAd.setVisibility(View.VISIBLE);
+                        binding.multiplayerBtn.setVisibility(View.VISIBLE);
                     }
                 });
     }
@@ -113,6 +120,7 @@ public class menu_fragment extends BaseFragment {
                         binding.progressBar.setVisibility(View.GONE);
                         binding.dailyBtn.setVisibility(View.VISIBLE);
                         binding.classicBtn.setVisibility(View.VISIBLE);
+                        binding.multiplayerBtn.setVisibility(View.VISIBLE);
                     }
 
                     if (CommonValues.versionCode.equalsIgnoreCase(CommonValues.versionCodeFirebase)) {
@@ -127,6 +135,7 @@ public class menu_fragment extends BaseFragment {
                         sessionManager.addGuessWordList(Params.GUESS_WORD_LIST, createWordList());
                         sessionManager.addBooleanKey(Params.GUESS_WORD_LIST_ADDED, true);
                     }
+                    deletePreviousRooms();
                 }
             }
 
@@ -135,6 +144,47 @@ public class menu_fragment extends BaseFragment {
 
             }
         });
+    }
+
+    private void deletePreviousRooms() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for (int i = 0; i < 10; i++) {
+                        String oldRoomDate = getOldDate(i);
+                        if (dataSnapshot.hasChild(oldRoomDate)) {
+                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(oldRoomDate);
+                            databaseReference.removeValue();
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private String getOldDate(int i){
+        i = i+5;
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd", Locale.getDefault());
+        String sDate = dateFormat.format(c);
+        Date date = null;
+        try {
+            date = dateFormat.parse(sDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, -i);
+        String oldDate = dateFormat.format(calendar.getTime());
+        return oldDate;
     }
 
     private List<String> createWordList() {
@@ -226,10 +276,31 @@ public class menu_fragment extends BaseFragment {
             }
             return true;
         });
+
+        binding.multiplayerBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.multiplayerBtn.startAnimation(scaleUp);
+                if (!isForceUpdate) {
+                    Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_roomFragment);
+                } else {
+                    showToast("App Update REQUIRED");
+                }
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.multiplayerBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
     }
 
     private void showToast(String msg) {
         showToast(msg, getContext(), getActivity());
+    }
+
+    private void getCurrentDate() {
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("dd", Locale.getDefault());
+        CommonValues.roomDate = df.format(c);
+        Log.d("DEMON", "getCurrentDate: date-)" + CommonValues.roomDate);
     }
 
     @Override

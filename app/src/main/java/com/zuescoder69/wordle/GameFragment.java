@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -57,6 +58,7 @@ public class GameFragment extends BaseFragment {
     private final String wordInDB = "Word";
     private final String classic = Params.CLASSIC_GAME_MODE;
     private final String daily = Params.DAILY_GAME_MODE;
+    private final String multi = Params.MULTI_GAME_MODE;
     private final long vibrationTime = 80;
 
     private FragmentGameBinding binding;
@@ -71,6 +73,14 @@ public class GameFragment extends BaseFragment {
     private String currentDate;
     private String userId;
     private String wordId;
+    private String roomId;
+    private String lobbyStatus = "";
+    private String winnerId = "";
+    private String winnerName = "";
+    private String userStatus1 = "";
+    private String userStatus2 = "";
+    private String userId1 = "";
+    private String userId2 = "";
 
     private Animation scaleUp, scaleDown;
     private DbHandler dbHandler;
@@ -110,6 +120,7 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        CommonValues.currentFragment = CommonValues.gameFragment;
         binding.victory.setVisibility(View.GONE);
         binding.lose.setVisibility(View.GONE);
         binding.progress.setVisibility(View.VISIBLE);
@@ -118,11 +129,99 @@ public class GameFragment extends BaseFragment {
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
         Handler handler = new Handler();
         handler.postDelayed(() -> {
-            getPreviousGameData();
-            setupOnClicks();
+            if (!gameMode.equalsIgnoreCase(multi)) {
+                getPreviousGameData();
+            } else {
+                getMultiplayerGameData();
+            }
             getCurrentDate();
+            setupOnClicks();
             getAppData();
         }, 300);
+    }
+
+    private void getMultiplayerGameData() {
+        roomId = CommonValues.roomId;
+        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                    };
+                    Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                    answer = (String) map.get("Answer");
+                    lobbyStatus = (String) map.get("Lobby Status");
+                    wordId = (String) map.get("WordId");
+                    winnerId = (String) map.get("WinnerId");
+                    winnerName = (String) map.get("WinnerName");
+                    userStatus1 = (String) map.get("UserStatus1");
+                    userStatus2 = (String) map.get("UserStatus2");
+                    userId1 = (String) map.get("UserId1");
+                    userId2 = (String) map.get("UserId2");
+                    checkLobbyStatus();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void checkLobbyStatus() {
+        if (lobbyStatus.equalsIgnoreCase("Result")) {
+            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+            Map setValues = new HashMap();
+            setValues.put(wordInDB + wordId, "done");
+            databaseReference.updateChildren(setValues);
+
+            if (!TextUtils.isEmpty(winnerId)) {
+                if (userId.equalsIgnoreCase(winnerId)) {
+                    binding.victory.setVisibility(View.VISIBLE);
+                } else {
+                    binding.lose.setVisibility(View.VISIBLE);
+                }
+            }
+
+            Handler handler1 = new Handler();
+            handler1.postDelayed(() -> {
+                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("winnerName", winnerName);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                    }
+                }
+            }, 5000);
+        } else {
+            if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        Bundle bundle = new Bundle();
+                        bundle.putString("winnerName", "lost");
+                        if (getView() != null) {
+                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                        }
+                    }
+                }, 5000);
+            }
+        }
+    }
+
+    private void setMuliplayerLost() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        Map setValues = new HashMap();
+        if (userId.equalsIgnoreCase(userId1)) {
+            setValues.put("UserStatus1", "no");
+        } else if (userId.equalsIgnoreCase(userId2)) {
+            setValues.put("UserStatus2", "no");
+        }
+        databaseReference.updateChildren(setValues);
     }
 
     private void getAppData() {
@@ -349,7 +448,9 @@ public class GameFragment extends BaseFragment {
                                                     });
                                                 } else {
                                                     showToast(CommonValues.comeTomorrowMsg);
-                                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                                    if (getView() != null) {
+                                                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                                    }
                                                 }
                                             }
 
@@ -1598,7 +1699,6 @@ public class GameFragment extends BaseFragment {
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
 
-
                     binding.row55.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
                 }, 250);
@@ -1639,24 +1739,38 @@ public class GameFragment extends BaseFragment {
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    binding.lose.setVisibility(View.VISIBLE);
-                    Handler handler1 = new Handler();
-                    handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                        } else {
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                        }
-                    }, 5000);
+                if (gameMode.equalsIgnoreCase(multi)) {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                    }, 250);
+                } else {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> {
+                            if (gameMode.equalsIgnoreCase(classic)) {
+                                Bundle bundle = new Bundle();
+                                bundle.putString("gameMode", classic);
+                                if (getView() != null) {
+                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                                }
+                            } else {
+                                if (getView() != null) {
+                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                }
+                            }
+                        }, 5000);
 
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row65.animate().alpha(1f).setDuration(250);
-                }, 250);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                    }, 250);
+                }
                 setDataInDB(6);
             }
         }
@@ -1923,24 +2037,38 @@ public class GameFragment extends BaseFragment {
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    binding.lose.setVisibility(View.VISIBLE);
-                    Handler handler1 = new Handler();
-                    handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                        } else {
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                        }
-                    }, 5000);
+                if (gameMode.equalsIgnoreCase(multi)) {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                    }, 250);
+                } else {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> {
+                            if (gameMode.equalsIgnoreCase(classic)) {
+                                Bundle bundle = new Bundle();
+                                bundle.putString("gameMode", classic);
+                                if (getView() != null) {
+                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                                }
+                            } else {
+                                if (getView() != null) {
+                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                }
+                            }
+                        }, 5000);
 
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row65.animate().alpha(1f).setDuration(250);
-                }, 250);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                    }, 250);
+                }
                 setDataInDB(6);
             }
         }
@@ -2250,11 +2378,13 @@ public class GameFragment extends BaseFragment {
 
     private void index5(String rowLocal) {
         if (currentWord.equalsIgnoreCase(answer)) {
-            dbHandler.dropTable(gameMode);
-            sessionManager.clearGameModeSession(gameMode);
+            if (!gameMode.equalsIgnoreCase(multi)) {
+                dbHandler.dropTable(gameMode);
+                sessionManager.clearGameModeSession(gameMode);
+                binding.victory.setVisibility(View.VISIBLE);
+            }
             getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             binding.gameFragment.setEnabled(false);
-            binding.victory.setVisibility(View.VISIBLE);
             if (gameMode.equalsIgnoreCase(daily)) {
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(daily).child(currentDate);
                 Map setValues = new HashMap();
@@ -2309,6 +2439,23 @@ public class GameFragment extends BaseFragment {
 
                     }
                 });
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
+                    }
+                }, 5000);
 
             } else if (gameMode.equalsIgnoreCase(classic)) {
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
@@ -2362,111 +2509,124 @@ public class GameFragment extends BaseFragment {
 
                     }
                 });
-            }
-            Handler handler1 = new Handler();
-            handler1.postDelayed(() -> {
-                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (gameMode.equalsIgnoreCase(classic)) {
-                        Bundle bundle = new Bundle();
-                        bundle.putString("gameMode", classic);
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                    } else {
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
                     }
-                }
-            }, 5000);
+                }, 5000);
+            } else if (gameMode.equalsIgnoreCase(multi)) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+                Map setValues = new HashMap();
+                setValues.put("Lobby Status", "Result");
+                setValues.put("WinnerId", userId);
+                setValues.put("WinnerName", sessionManager.getStringKey(Params.KEY_USER_NAME));
+                databaseReference.updateChildren(setValues);
+            }
         }
     }
 
     private void setDataInDB(Integer row) {
-        if (gameMode.equalsIgnoreCase(classic)) {
-            sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, true);
-        } else {
-            sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, true);
+        if (!gameMode.equalsIgnoreCase(multi)) {
+            if (gameMode.equalsIgnoreCase(classic)) {
+                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, true);
+            } else {
+                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, true);
+            }
+            String letter1 = "", letter2 = "", letter3 = "", letter4 = "", letter5 = "";
+
+            if (row == 1) {
+                letter1 = binding.row11.getText().toString().toUpperCase().trim();
+                letter2 = binding.row12.getText().toString().toUpperCase().trim();
+                letter3 = binding.row13.getText().toString().toUpperCase().trim();
+                letter4 = binding.row14.getText().toString().toUpperCase().trim();
+                letter5 = binding.row15.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "1");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "1");
+                }
+            } else if (row == 2) {
+                letter1 = binding.row21.getText().toString().toUpperCase().trim();
+                letter2 = binding.row22.getText().toString().toUpperCase().trim();
+                letter3 = binding.row23.getText().toString().toUpperCase().trim();
+                letter4 = binding.row24.getText().toString().toUpperCase().trim();
+                letter5 = binding.row25.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "2");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "2");
+                }
+            } else if (row == 3) {
+                letter1 = binding.row31.getText().toString().toUpperCase().trim();
+                letter2 = binding.row32.getText().toString().toUpperCase().trim();
+                letter3 = binding.row33.getText().toString().toUpperCase().trim();
+                letter4 = binding.row34.getText().toString().toUpperCase().trim();
+                letter5 = binding.row35.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "3");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "3");
+                }
+            } else if (row == 4) {
+                letter1 = binding.row41.getText().toString().toUpperCase().trim();
+                letter2 = binding.row42.getText().toString().toUpperCase().trim();
+                letter3 = binding.row43.getText().toString().toUpperCase().trim();
+                letter4 = binding.row44.getText().toString().toUpperCase().trim();
+                letter5 = binding.row45.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "4");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "4");
+                }
+            } else if (row == 5) {
+                letter1 = binding.row51.getText().toString().toUpperCase().trim();
+                letter2 = binding.row52.getText().toString().toUpperCase().trim();
+                letter3 = binding.row53.getText().toString().toUpperCase().trim();
+                letter4 = binding.row54.getText().toString().toUpperCase().trim();
+                letter5 = binding.row55.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "5");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "5");
+                }
+            } else if (row == 6) {
+                letter1 = binding.row61.getText().toString().toUpperCase().trim();
+                letter2 = binding.row62.getText().toString().toUpperCase().trim();
+                letter3 = binding.row63.getText().toString().toUpperCase().trim();
+                letter4 = binding.row64.getText().toString().toUpperCase().trim();
+                letter5 = binding.row65.getText().toString().toUpperCase().trim();
+
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "6");
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "6");
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
+                }
+                dbHandler.dropTable(gameMode);
+            }
+            if (gameMode.equalsIgnoreCase(classic)) {
+                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
+            } else {
+                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
+            }
+
+            sessionManager.addStringKey(Params.KEY_LAST_GAME_MODE, gameMode);
+
+            dbHandler.addRow(row, letter1, letter2, letter3, letter4, letter5, gameMode);
         }
-        String letter1 = "", letter2 = "", letter3 = "", letter4 = "", letter5 = "";
-
-        if (row == 1) {
-            letter1 = binding.row11.getText().toString().toUpperCase().trim();
-            letter2 = binding.row12.getText().toString().toUpperCase().trim();
-            letter3 = binding.row13.getText().toString().toUpperCase().trim();
-            letter4 = binding.row14.getText().toString().toUpperCase().trim();
-            letter5 = binding.row15.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "1");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "1");
-            }
-        } else if (row == 2) {
-            letter1 = binding.row21.getText().toString().toUpperCase().trim();
-            letter2 = binding.row22.getText().toString().toUpperCase().trim();
-            letter3 = binding.row23.getText().toString().toUpperCase().trim();
-            letter4 = binding.row24.getText().toString().toUpperCase().trim();
-            letter5 = binding.row25.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "2");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "2");
-            }
-        } else if (row == 3) {
-            letter1 = binding.row31.getText().toString().toUpperCase().trim();
-            letter2 = binding.row32.getText().toString().toUpperCase().trim();
-            letter3 = binding.row33.getText().toString().toUpperCase().trim();
-            letter4 = binding.row34.getText().toString().toUpperCase().trim();
-            letter5 = binding.row35.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "3");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "3");
-            }
-        } else if (row == 4) {
-            letter1 = binding.row41.getText().toString().toUpperCase().trim();
-            letter2 = binding.row42.getText().toString().toUpperCase().trim();
-            letter3 = binding.row43.getText().toString().toUpperCase().trim();
-            letter4 = binding.row44.getText().toString().toUpperCase().trim();
-            letter5 = binding.row45.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "4");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "4");
-            }
-        } else if (row == 5) {
-            letter1 = binding.row51.getText().toString().toUpperCase().trim();
-            letter2 = binding.row52.getText().toString().toUpperCase().trim();
-            letter3 = binding.row53.getText().toString().toUpperCase().trim();
-            letter4 = binding.row54.getText().toString().toUpperCase().trim();
-            letter5 = binding.row55.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "5");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "5");
-            }
-        } else if (row == 6) {
-            letter1 = binding.row61.getText().toString().toUpperCase().trim();
-            letter2 = binding.row62.getText().toString().toUpperCase().trim();
-            letter3 = binding.row63.getText().toString().toUpperCase().trim();
-            letter4 = binding.row64.getText().toString().toUpperCase().trim();
-            letter5 = binding.row65.getText().toString().toUpperCase().trim();
-
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "6");
-                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "6");
-                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
-            }
-            dbHandler.dropTable(gameMode);
-        }
-        if (gameMode.equalsIgnoreCase(classic)) {
-            sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
-        } else {
-            sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
-        }
-
-        sessionManager.addStringKey(Params.KEY_LAST_GAME_MODE, gameMode);
-
-        dbHandler.addRow(row, letter1, letter2, letter3, letter4, letter5, gameMode);
     }
 
     private void removeCharInView() {
