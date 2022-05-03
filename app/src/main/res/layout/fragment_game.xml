@@ -21,7 +21,7 @@
                 android:id="@+id/gameFragment"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -1276,11 +1276,11 @@
                     android:id="@+id/view2"
                     android:layout_width="match_parent"
                     android:layout_height="32dp"
-                    app:layout_constraintBottom_toTopOf="@+id/btn_q"
+                    app:layout_constraintBottom_toTopOf="@+id/helpBtn"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_bias="0.0"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/row6" />
+                    app:layout_constraintTop_toBottomOf="@+id/hintTv" />
 
                 <com.airbnb.lottie.LottieAnimationView
                     android:id="@+id/victory"
@@ -1300,9 +1300,10 @@
                     android:id="@+id/lose"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
+                    android:layout_marginBottom="16dp"
                     android:elevation="5dp"
-                    android:visibility="gone"
-                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:visibility="visible"
+                    app:layout_constraintBottom_toTopOf="@+id/hintTv"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -1310,13 +1311,96 @@
                     app:lottie_loop="true"
                     app:lottie_rawRes="@raw/lose" />
 
+                <Button
+                    android:id="@+id/helpBtn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/button_bg"
+                    android:fontFamily="@font/arial_bold"
+                    android:text="Hint"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="24sp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@+id/btn_p"
+                    app:layout_constraintEnd_toEndOf="@+id/btn_p"
+                    app:layout_constraintStart_toStartOf="@+id/btn_q" />
+
+                <Button
+                    android:id="@+id/restartGameBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/button_bg"
+                    android:fontFamily="@font/arial_bold"
+                    android:text="Restart"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@+id/btn_p"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/nextGameBtn" />
+
+                <Button
+                    android:id="@+id/seeAnswerBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/button_bg"
+                    android:fontFamily="@font/arial_bold"
+                    android:text="Answer"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@+id/btn_q"
+                    app:layout_constraintEnd_toStartOf="@+id/nextGameBtn"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <Button
+                    android:id="@+id/nextGameBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/button_bg"
+                    android:fontFamily="@font/arial_bold"
+                    android:text="Next"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toTopOf="@+id/btn_t"
+                    app:layout_constraintEnd_toStartOf="@+id/restartGameBtn"
+                    app:layout_constraintStart_toEndOf="@+id/seeAnswerBtn" />
+
+                <TextView
+                    android:id="@+id/hintTv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:text=""
+                    android:fontFamily="@font/arial_bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/white"
+                    app:layout_constraintEnd_toEndOf="@+id/row6"
+                    app:layout_constraintStart_toStartOf="@+id/row6"
+                    app:layout_constraintTop_toBottomOf="@+id/row6" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/progress"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <com.airbnb.lottie.LottieAnimationView
                     android:id="@+id/progressBar"

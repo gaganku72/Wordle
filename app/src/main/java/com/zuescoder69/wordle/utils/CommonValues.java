@@ -1,5 +1,7 @@
 package com.zuescoder69.wordle.utils;
 
+import com.google.android.gms.ads.rewarded.RewardedAd;
+
 import java.util.ArrayList;
 
 /**
@@ -18,6 +20,7 @@ public class CommonValues {
     public static String roomId = "";
     public static String roomDate = "";
     public static ArrayList<String> roomIds = new ArrayList<>();
+    public static RewardedAd mRewardedAd;
 
     public static final String splashScreenFragment = "splashScreenFragment";
     public static final String menuFragment = "menuFragment";
@@ -25,4 +28,5 @@ public class CommonValues {
     public static final String gameFragment = "gameFragment";
     public static final String lobbyFragment = "lobbyFragment";
     public static final String roomFragment = "roomFragment";
+    public static final String resultFragment = "resultFragment";
 }

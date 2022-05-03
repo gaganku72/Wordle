@@ -26,7 +26,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
-import com.zuescoder69.wordle.databinding.FragmentMenuFragmentBinding;
+import com.zuescoder69.wordle.databinding.FragmentMenuBinding;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
 import com.zuescoder69.wordle.utils.CommonValues;
@@ -40,13 +40,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class menu_fragment extends BaseFragment {
-    private FragmentMenuFragmentBinding binding;
+public class MenuFragment extends BaseFragment {
+    private FragmentMenuBinding binding;
     private Animation scaleUp, scaleDown;
     private boolean isForceUpdate = false;
-    private RewardedAd mRewardedAd;
+    private String adFreeBtnText = "", adFreeMilliSeconds = "";
 
-    public menu_fragment() {
+    public MenuFragment() {
         // Required empty public constructor
     }
 
@@ -61,7 +61,7 @@ public class menu_fragment extends BaseFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        binding = FragmentMenuFragmentBinding.inflate(inflater, container, false);
+        binding = FragmentMenuBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
@@ -75,29 +75,39 @@ public class menu_fragment extends BaseFragment {
     }
 
     private void setUpRewardedAd() {
-        AdRequest adRequest = new AdRequest.Builder().build();
-        RewardedAd.load(getActivity(), CommonValues.rewardAdId,
-                adRequest, new RewardedAdLoadCallback() {
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        // Handle the error.
-                        mRewardedAd = null;
-                        binding.progressBar.setVisibility(View.GONE);
-                        binding.dailyBtn.setVisibility(View.VISIBLE);
-                        binding.classicBtn.setVisibility(View.VISIBLE);
-                        binding.multiplayerBtn.setVisibility(View.VISIBLE);
-                    }
+        if (CommonValues.mRewardedAd == null) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            RewardedAd.load(getActivity(), CommonValues.rewardAdId,
+                    adRequest, new RewardedAdLoadCallback() {
+                        @Override
+                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                            // Handle the error.
+                            CommonValues.mRewardedAd = null;
+                            binding.progressBar.setVisibility(View.GONE);
+                            binding.dailyBtn.setVisibility(View.VISIBLE);
+                            binding.classicBtn.setVisibility(View.VISIBLE);
+                            binding.multiplayerBtn.setVisibility(View.VISIBLE);
+                        }
 
-                    @Override
-                    public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
-                        mRewardedAd = rewardedAd;
-                        binding.progressBar.setVisibility(View.GONE);
-                        binding.dailyBtn.setVisibility(View.VISIBLE);
-                        binding.classicBtn.setVisibility(View.VISIBLE);
-                        binding.videoAd.setVisibility(View.VISIBLE);
-                        binding.multiplayerBtn.setVisibility(View.VISIBLE);
-                    }
-                });
+                        @Override
+                        public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
+                            CommonValues.mRewardedAd = rewardedAd;
+                            binding.progressBar.setVisibility(View.GONE);
+                            binding.dailyBtn.setVisibility(View.VISIBLE);
+                            binding.classicBtn.setVisibility(View.VISIBLE);
+                            binding.videoAd.setVisibility(View.VISIBLE);
+                            binding.videoAd.setText(adFreeBtnText);
+                            binding.multiplayerBtn.setVisibility(View.VISIBLE);
+                        }
+                    });
+        } else if (CommonValues.mRewardedAd != null) {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.dailyBtn.setVisibility(View.VISIBLE);
+            binding.classicBtn.setVisibility(View.VISIBLE);
+            binding.videoAd.setVisibility(View.VISIBLE);
+            binding.multiplayerBtn.setVisibility(View.VISIBLE);
+            binding.videoAd.setText(adFreeBtnText);
+        }
     }
 
     private void getInitialData() {
@@ -112,6 +122,8 @@ public class menu_fragment extends BaseFragment {
                     CommonValues.versionCodeFirebase = (String) map.get("VersionCode");
                     CommonValues.comeTomorrowMsg = (String) map.get("ComeTomorrowMsg");
                     String toShowAd = (String) map.get("ShowAd");
+                    adFreeMilliSeconds = (String) map.get("AdFreeMilliSeconds");
+                    adFreeBtnText = (String) map.get("AdFreeBtnText");
                     if (toShowAd.equalsIgnoreCase("true")) {
                         CommonValues.isShowAd = true;
                         setUpRewardedAd();
@@ -169,8 +181,8 @@ public class menu_fragment extends BaseFragment {
         });
     }
 
-    private String getOldDate(int i){
-        i = i+5;
+    private String getOldDate(int i) {
+        i = i + 5;
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd", Locale.getDefault());
         String sDate = dateFormat.format(c);
@@ -248,18 +260,22 @@ public class menu_fragment extends BaseFragment {
                 binding.videoAd.startAnimation(scaleUp);
                 if (!isForceUpdate) {
                     if (!CommonValues.isAdFree) {
-                        setUpRewardedAd();
-                        if (mRewardedAd != null) {
-                            mRewardedAd.show(getActivity(), rewardItem -> {
+                        if (CommonValues.mRewardedAd != null) {
+                            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                                CommonValues.mRewardedAd = null;
+                                setUpRewardedAd();
+                                showToast("Ad free period started");
                                 CommonValues.isAdFree = true;
+                                long time = Long.parseLong(adFreeMilliSeconds);
 
-                                new CountDownTimer(300000, 1000) {
+                                new CountDownTimer(time, 1000) {
                                     @Override
                                     public void onTick(long millisUntilFinished) {
                                     }
 
                                     @Override
                                     public void onFinish() {
+                                        showToast("Ad free period over");
                                         CommonValues.isAdFree = false;
                                     }
                                 }.start();

@@ -13,7 +13,6 @@ import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.navigation.NavDirections;
 import androidx.navigation.Navigation;
 
 import com.google.firebase.database.DataSnapshot;
@@ -106,8 +105,8 @@ public class RoomFragment extends BaseFragment {
 
     private void joinRoom() {
         String rooomIdLocal = binding.roomId.getText().toString().trim();
-        String roomDateLocal = rooomIdLocal.substring(0,2);
         if (!TextUtils.isEmpty(rooomIdLocal)) {
+            String roomDateLocal = rooomIdLocal.substring(0, 2);
             databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(roomDateLocal).child(rooomIdLocal);
             databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override

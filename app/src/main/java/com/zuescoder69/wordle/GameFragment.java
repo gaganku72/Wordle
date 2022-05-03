@@ -28,6 +28,8 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -91,7 +93,8 @@ public class GameFragment extends BaseFragment {
 
     private ArrayList<RowModel> rowsList;
 
-    private boolean isEnterEnabled = true;
+    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false;
+    private final ArrayList<Boolean> correctCol = new ArrayList<>();
 
     public GameFragment() {
         // Required empty public constructor
@@ -120,11 +123,17 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        initCorrectCol();
         CommonValues.currentFragment = CommonValues.gameFragment;
+        isAdFree = CommonValues.isAdFree;
         binding.victory.setVisibility(View.GONE);
         binding.lose.setVisibility(View.GONE);
         binding.progress.setVisibility(View.VISIBLE);
         binding.gameFragment.setVisibility(View.GONE);
+        binding.helpBtn.setVisibility(View.INVISIBLE);
+        binding.restartGameBtn.setVisibility(View.GONE);
+        binding.nextGameBtn.setVisibility(View.GONE);
+        binding.seeAnswerBtn.setVisibility(View.GONE);
         sessionManager = new SessionManager(getContext());
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
         Handler handler = new Handler();
@@ -138,6 +147,12 @@ public class GameFragment extends BaseFragment {
             setupOnClicks();
             getAppData();
         }, 300);
+    }
+
+    private void initCorrectCol() {
+        for (int i = 0; i < 5; i++) {
+            correctCol.add(i, false);
+        }
     }
 
     private void getMultiplayerGameData() {
@@ -204,6 +219,7 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         Bundle bundle = new Bundle();
                         bundle.putString("winnerName", "lost");
+                        bundle.putString("answer", answer);
                         if (getView() != null) {
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
                         }
@@ -237,6 +253,7 @@ public class GameFragment extends BaseFragment {
                     if (toShowAd.equalsIgnoreCase("true")) {
                         CommonValues.isShowAd = true;
                         loadAd();
+                        loadRewardedAd();
                     } else {
                         CommonValues.isShowAd = false;
                         binding.progress.setVisibility(View.GONE);
@@ -271,6 +288,40 @@ public class GameFragment extends BaseFragment {
                         binding.gameFragment.setVisibility(View.VISIBLE);
                     }
                 });
+    }
+
+    private void loadRewardedAd() {
+        if (!gameMode.equalsIgnoreCase(multi)) {
+            if (CommonValues.mRewardedAd == null && CommonValues.isShowAd) {
+                AdRequest adRequest = new AdRequest.Builder().build();
+                RewardedAd.load(getActivity(), CommonValues.rewardAdId,
+                        adRequest, new RewardedAdLoadCallback() {
+                            @Override
+                            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                                // Handle the error.
+                                CommonValues.mRewardedAd = null;
+                                binding.progressBar.setVisibility(View.GONE);
+                                binding.gameFragment.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
+                                CommonValues.mRewardedAd = rewardedAd;
+                                binding.progressBar.setVisibility(View.GONE);
+                                binding.gameFragment.setVisibility(View.VISIBLE);
+                                if (!gameLost) {
+                                    binding.helpBtn.setVisibility(View.VISIBLE);
+                                }
+                            }
+                        });
+            } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+                binding.progressBar.setVisibility(View.GONE);
+                binding.gameFragment.setVisibility(View.VISIBLE);
+                if (!gameLost) {
+                    binding.helpBtn.setVisibility(View.VISIBLE);
+                }
+            }
+        }
     }
 
     private void getPreviousGameData() {
@@ -833,9 +884,10 @@ public class GameFragment extends BaseFragment {
                 if (isEnterEnabled) {
                     if (current == 6) {
                         if (row < 7) {
-                            if (mInterstitialAd != null && !CommonValues.isAdFree) {
+                            if (mInterstitialAd != null && !isAdFree) {
                                 mInterstitialAd.show(getActivity());
                                 loadAd();
+                                loadRewardedAd();
                                 mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                                     @Override
                                     public void onAdDismissedFullScreenContent() {
@@ -880,6 +932,206 @@ public class GameFragment extends BaseFragment {
             }
             return true;
         });
+
+        binding.helpBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.helpBtn.startAnimation(scaleUp);
+                showHint();
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.helpBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
+    }
+
+    private void showHint() {
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                for (int i = 0; i < correctCol.size(); i++) {
+                    if (!correctCol.get(i)) {
+                        binding.hintTv.setVisibility(View.VISIBLE);
+                        String hint = answer.charAt(i) + "";
+                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void showLostGameViews() {
+        if (CommonValues.isShowAd) {
+            gameLost = true;
+            if (CommonValues.mRewardedAd != null) {
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+                binding.nextGameBtn.setVisibility(View.VISIBLE);
+                binding.seeAnswerBtn.setVisibility(View.VISIBLE);
+                binding.restartGameBtn.setVisibility(View.VISIBLE);
+
+                binding.nextGameBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.nextGameBtn.startAnimation(scaleUp);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.nextGameBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+
+                binding.seeAnswerBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.seeAnswerBtn.startAnimation(scaleUp);
+                        seeAnswer();
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.seeAnswerBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+
+                binding.restartGameBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.restartGameBtn.startAnimation(scaleUp);
+                        restartGame();
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.restartGameBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+            }
+        } else {
+            Handler handler1 = new Handler();
+            handler1.postDelayed(() -> {
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("gameMode", classic);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                    }
+                } else {
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                    }
+                }
+            }, 5000);
+        }
+    }
+
+    private void restartGame() {
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                removeAllCharFromViews();
+            });
+        }
+    }
+
+    private void removeAllCharFromViews() {
+        current = 1;
+        row = 1;
+
+        binding.row11.setText("");
+        binding.row12.setText("");
+        binding.row13.setText("");
+        binding.row14.setText("");
+        binding.row15.setText("");
+
+        binding.row21.setText("");
+        binding.row22.setText("");
+        binding.row23.setText("");
+        binding.row24.setText("");
+        binding.row25.setText("");
+
+        binding.row31.setText("");
+        binding.row32.setText("");
+        binding.row33.setText("");
+        binding.row34.setText("");
+        binding.row35.setText("");
+
+        binding.row41.setText("");
+        binding.row42.setText("");
+        binding.row43.setText("");
+        binding.row44.setText("");
+        binding.row45.setText("");
+
+        binding.row51.setText("");
+        binding.row52.setText("");
+        binding.row53.setText("");
+        binding.row54.setText("");
+        binding.row55.setText("");
+
+        binding.row61.setText("");
+        binding.row62.setText("");
+        binding.row63.setText("");
+        binding.row64.setText("");
+        binding.row65.setText("");
+
+        binding.row11.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row12.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row13.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row14.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row15.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row21.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row22.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row23.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row24.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row25.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row31.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row32.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row33.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row34.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row35.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row41.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row42.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row43.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row44.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row45.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row51.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row52.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row53.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row54.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row55.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row61.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row62.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row63.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row64.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row65.setBackgroundResource(R.drawable.alphabets_bg);
+
+        gameLost = false;
+        binding.lose.setVisibility(View.GONE);
+        binding.restartGameBtn.setVisibility(View.GONE);
+        binding.nextGameBtn.setVisibility(View.GONE);
+        binding.seeAnswerBtn.setVisibility(View.GONE);
+    }
+
+    private void seeAnswer() {
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.hintTv.setVisibility(View.VISIBLE);
+                binding.hintTv.setText("Wordle is - " + answer);
+                binding.restartGameBtn.setVisibility(View.GONE);
+            });
+        }
     }
 
     private void submitWord() {
@@ -1038,6 +1290,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(0).equals(newLetter)) {
                 makeAnimation(1);
+                correctCol.set(0, true);
             } else {
                 makeHasAnimation(1);
             }
@@ -1050,6 +1303,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(1).equals(newLetter)) {
                 makeAnimation(2);
+                correctCol.set(1, true);
             } else {
                 makeHasAnimation(2);
             }
@@ -1062,6 +1316,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(2).equals(newLetter)) {
                 makeAnimation(3);
+                correctCol.set(2, true);
             } else {
                 makeHasAnimation(3);
             }
@@ -1074,6 +1329,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(3).equals(newLetter)) {
                 makeAnimation(4);
+                correctCol.set(3, true);
             } else {
                 makeHasAnimation(4);
             }
@@ -1086,6 +1342,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(4).equals(newLetter)) {
                 makeAnimation(5);
+                correctCol.set(4, true);
             } else {
                 makeHasAnimation(5);
             }
@@ -1198,6 +1455,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(0).equals(newLetter)) {
                     makeAnimation(1);
+                    correctCol.set(0, true);
                 } else {
                     makeHasAnimation(1);
                 }
@@ -1212,6 +1470,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(1).equals(newLetter)) {
                     makeAnimation(2);
+                    correctCol.set(1, true);
                 } else {
                     makeHasAnimation(2);
                 }
@@ -1226,6 +1485,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(2).equals(newLetter)) {
                     makeAnimation(3);
+                    correctCol.set(2, true);
                 } else {
                     makeHasAnimation(3);
                 }
@@ -1240,6 +1500,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(3).equals(newLetter)) {
                     makeAnimation(4);
+                    correctCol.set(3, true);
                 } else {
                     makeHasAnimation(4);
                 }
@@ -1254,6 +1515,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(4).equals(newLetter)) {
                     makeAnimation(5);
+                    correctCol.set(4, true);
                 } else {
                     makeHasAnimation(5);
                 }
@@ -1744,6 +2006,8 @@ public class GameFragment extends BaseFragment {
                     handler.postDelayed(() -> {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         binding.lose.setVisibility(View.VISIBLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
                         Handler handler1 = new Handler();
                         handler1.postDelayed(() -> setMuliplayerLost(), 500);
                     }, 250);
@@ -1752,23 +2016,9 @@ public class GameFragment extends BaseFragment {
                     handler.postDelayed(() -> {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         binding.lose.setVisibility(View.VISIBLE);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (gameMode.equalsIgnoreCase(classic)) {
-                                Bundle bundle = new Bundle();
-                                bundle.putString("gameMode", classic);
-                                if (getView() != null) {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                }
-                            } else {
-                                if (getView() != null) {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-
                         binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        showLostGameViews();
                     }, 250);
                 }
                 setDataInDB(6);
@@ -2041,6 +2291,8 @@ public class GameFragment extends BaseFragment {
                     Handler handler = new Handler();
                     handler.postDelayed(() -> {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
                         binding.lose.setVisibility(View.VISIBLE);
                         Handler handler1 = new Handler();
                         handler1.postDelayed(() -> setMuliplayerLost(), 500);
@@ -2050,23 +2302,9 @@ public class GameFragment extends BaseFragment {
                     handler.postDelayed(() -> {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         binding.lose.setVisibility(View.VISIBLE);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            if (gameMode.equalsIgnoreCase(classic)) {
-                                Bundle bundle = new Bundle();
-                                bundle.putString("gameMode", classic);
-                                if (getView() != null) {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                                }
-                            } else {
-                                if (getView() != null) {
-                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                                }
-                            }
-                        }, 5000);
-
                         binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        showLostGameViews();
                     }, 250);
                 }
                 setDataInDB(6);

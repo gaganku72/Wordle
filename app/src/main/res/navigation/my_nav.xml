@@ -23,9 +23,9 @@
     </fragment>
     <fragment
         android:id="@+id/menu_fragment"
-        android:name="com.zuescoder69.wordle.menu_fragment"
+        android:name="com.zuescoder69.wordle.MenuFragment"
         android:label="fragment_menu_fragment"
-        tools:layout="@layout/fragment_menu_fragment">
+        tools:layout="@layout/fragment_menu">
         <action
             android:id="@+id/action_menu_fragment_to_gameFragment"
             app:destination="@id/gameFragment"
