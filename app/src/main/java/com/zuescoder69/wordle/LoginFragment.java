@@ -145,6 +145,9 @@ public class LoginFragment extends BaseFragment {
                              */
                             SessionManager sessionManager = new SessionManager(getContext());
                             sessionManager.createLoginSession(userEmailID, userfirebaseid, userName, firstName);
+                            sessionManager.addBooleanKey(CommonValues.THEME_DARK, true);
+                            sessionManager.addBooleanKey(CommonValues.VIBRATION, true);
+
                             if (isNew) {
                                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userfirebaseid);
                                 Map setValues = new HashMap();

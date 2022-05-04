@@ -61,7 +61,7 @@ public class GameFragment extends BaseFragment {
     private final String classic = Params.CLASSIC_GAME_MODE;
     private final String daily = Params.DAILY_GAME_MODE;
     private final String multi = Params.MULTI_GAME_MODE;
-    private final long vibrationTime = 80;
+    private long vibrationTime = 80;
 
     private FragmentGameBinding binding;
 
@@ -123,7 +123,9 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        sessionManager = new SessionManager(getContext());
         initCorrectCol();
+        setVibration();
         CommonValues.currentFragment = CommonValues.gameFragment;
         isAdFree = CommonValues.isAdFree;
         binding.victory.setVisibility(View.GONE);
@@ -134,7 +136,6 @@ public class GameFragment extends BaseFragment {
         binding.restartGameBtn.setVisibility(View.GONE);
         binding.nextGameBtn.setVisibility(View.GONE);
         binding.seeAnswerBtn.setVisibility(View.GONE);
-        sessionManager = new SessionManager(getContext());
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
         Handler handler = new Handler();
         handler.postDelayed(() -> {
@@ -147,6 +148,15 @@ public class GameFragment extends BaseFragment {
             setupOnClicks();
             getAppData();
         }, 300);
+    }
+
+    private void setVibration() {
+        boolean vibration = sessionManager.getBooleanKey(CommonValues.VIBRATION);
+        if (vibration) {
+            vibrationTime = 80;
+        } else {
+            vibrationTime = 0;
+        }
     }
 
     private void initCorrectCol() {
@@ -254,6 +264,7 @@ public class GameFragment extends BaseFragment {
                         CommonValues.isShowAd = true;
                         loadAd();
                         loadRewardedAd();
+                        setRewardedCallbacks();
                     } else {
                         CommonValues.isShowAd = false;
                         binding.progress.setVisibility(View.GONE);
@@ -322,6 +333,44 @@ public class GameFragment extends BaseFragment {
                 }
             }
         }
+    }
+
+    private void setRewardedCallbacks() {
+        CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override
+            public void onAdClicked() {
+                super.onAdClicked();
+            }
+
+            @Override
+            public void onAdDismissedFullScreenContent() {
+                super.onAdDismissedFullScreenContent();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                super.onAdFailedToShowFullScreenContent(adError);
+            }
+
+            @Override
+            public void onAdImpression() {
+                super.onAdImpression();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAdShowedFullScreenContent() {
+                super.onAdShowedFullScreenContent();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 
     private void getPreviousGameData() {
@@ -947,8 +996,8 @@ public class GameFragment extends BaseFragment {
     private void showHint() {
         if (CommonValues.mRewardedAd != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
+//                CommonValues.mRewardedAd = null;
+//                loadRewardedAd();
                 for (int i = 0; i < correctCol.size(); i++) {
                     if (!correctCol.get(i)) {
                         binding.hintTv.setVisibility(View.VISIBLE);
@@ -1032,8 +1081,8 @@ public class GameFragment extends BaseFragment {
     private void restartGame() {
         if (CommonValues.mRewardedAd != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
+//                CommonValues.mRewardedAd = null;
+//                loadRewardedAd();
                 removeAllCharFromViews();
             });
         }
@@ -1125,8 +1174,8 @@ public class GameFragment extends BaseFragment {
     private void seeAnswer() {
         if (CommonValues.mRewardedAd != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
+//                CommonValues.mRewardedAd = null;
+//                loadRewardedAd();
                 binding.hintTv.setVisibility(View.VISIBLE);
                 binding.hintTv.setText("Wordle is - " + answer);
                 binding.restartGameBtn.setVisibility(View.GONE);
@@ -1147,73 +1196,74 @@ public class GameFragment extends BaseFragment {
             }
             wordleLogic(list);
             isEnterEnabled = true;
-        } else {
-            noWordAnimation();
         }
+//        else {
+//            noWordAnimation();
+//        }
     }
 
-    private void noWordAnimation() {
-        Handler handler = new Handler();
-        handler.postDelayed(() -> {
-            ObjectAnimator animation = new ObjectAnimator();
-            if (row == 1) {
-                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
-            } else if (row == 2) {
-                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
-            } else if (row == 3) {
-                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
-            } else if (row == 4) {
-                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
-            } else if (row == 5) {
-                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
-            } else if (row == 6) {
-                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
-            }
-            animation.setDuration(100);
-            animation.start();
-        }, 100);
-
-        handler.postDelayed(() -> {
-            ObjectAnimator animation = new ObjectAnimator();
-            if (row == 1) {
-                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
-            } else if (row == 2) {
-                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
-            } else if (row == 3) {
-                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
-            } else if (row == 4) {
-                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
-            } else if (row == 5) {
-                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
-            } else if (row == 6) {
-                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
-            }
-            animation.setDuration(100);
-            animation.start();
-        }, 200);
-
-        handler.postDelayed(() -> {
-            ObjectAnimator animation = new ObjectAnimator();
-            if (row == 1) {
-                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
-            } else if (row == 2) {
-                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
-            } else if (row == 3) {
-                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
-            } else if (row == 4) {
-                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
-            } else if (row == 5) {
-                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
-            } else if (row == 6) {
-                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
-            }
-            animation.setDuration(100);
-            animation.start();
-            isEnterEnabled = true;
-        }, 300);
-        vibrator.vibrate(300);
-        showToast("Not in word list");
-    }
+//    private void noWordAnimation() {
+//        Handler handler = new Handler();
+//        handler.postDelayed(() -> {
+//            ObjectAnimator animation = new ObjectAnimator();
+//            if (row == 1) {
+//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
+//            } else if (row == 2) {
+//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
+//            } else if (row == 3) {
+//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
+//            } else if (row == 4) {
+//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
+//            } else if (row == 5) {
+//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
+//            } else if (row == 6) {
+//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
+//            }
+//            animation.setDuration(100);
+//            animation.start();
+//        }, 100);
+//
+//        handler.postDelayed(() -> {
+//            ObjectAnimator animation = new ObjectAnimator();
+//            if (row == 1) {
+//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
+//            } else if (row == 2) {
+//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
+//            } else if (row == 3) {
+//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
+//            } else if (row == 4) {
+//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
+//            } else if (row == 5) {
+//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
+//            } else if (row == 6) {
+//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
+//            }
+//            animation.setDuration(100);
+//            animation.start();
+//        }, 200);
+//
+//        handler.postDelayed(() -> {
+//            ObjectAnimator animation = new ObjectAnimator();
+//            if (row == 1) {
+//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
+//            } else if (row == 2) {
+//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
+//            } else if (row == 3) {
+//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
+//            } else if (row == 4) {
+//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
+//            } else if (row == 5) {
+//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
+//            } else if (row == 6) {
+//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
+//            }
+//            animation.setDuration(100);
+//            animation.start();
+//            isEnterEnabled = true;
+//        }, 300);
+//        vibrator.vibrate(300);
+//        showToast("Not in word list");
+//    }
 
     private <T> boolean containsAny(ArrayList<T> l1, ArrayList<T> l2) {
         for (T elem : l1) {

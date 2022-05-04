@@ -29,4 +29,8 @@ public class CommonValues {
     public static final String lobbyFragment = "lobbyFragment";
     public static final String roomFragment = "roomFragment";
     public static final String resultFragment = "resultFragment";
+    public static final String THEME = "theme";
+    public static final String THEME_DARK = "themeDark";
+    public static final String THEME_LIGHT = "themeLight";
+    public static final String VIBRATION = "vibration";
 }

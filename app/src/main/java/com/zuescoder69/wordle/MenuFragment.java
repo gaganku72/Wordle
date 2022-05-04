@@ -16,7 +16,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
@@ -98,6 +100,7 @@ public class MenuFragment extends BaseFragment {
                             binding.videoAd.setVisibility(View.VISIBLE);
                             binding.videoAd.setText(adFreeBtnText);
                             binding.multiplayerBtn.setVisibility(View.VISIBLE);
+                            setRewardedCallbacks();
                         }
                     });
         } else if (CommonValues.mRewardedAd != null) {
@@ -107,6 +110,7 @@ public class MenuFragment extends BaseFragment {
             binding.videoAd.setVisibility(View.VISIBLE);
             binding.multiplayerBtn.setVisibility(View.VISIBLE);
             binding.videoAd.setText(adFreeBtnText);
+            setRewardedCallbacks();
         }
     }
 
@@ -207,6 +211,46 @@ public class MenuFragment extends BaseFragment {
         return guessList;
     }
 
+    private void setRewardedCallbacks() {
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                }
+
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    super.onAdDismissedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    setUpRewardedAd();
+                    binding.videoAd.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                    super.onAdFailedToShowFullScreenContent(adError);
+                }
+
+                @Override
+                public void onAdImpression() {
+                    super.onAdImpression();
+                    CommonValues.mRewardedAd = null;
+                    setUpRewardedAd();
+                    binding.videoAd.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    super.onAdShowedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    setUpRewardedAd();
+                    binding.videoAd.setVisibility(View.GONE);
+                }
+            });
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private void setupOnClicks() {
         binding.classicBtn.setOnTouchListener((view, motionEvent) -> {
@@ -251,6 +295,20 @@ public class MenuFragment extends BaseFragment {
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.dailyBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
+
+        binding.settingsBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.settingsBtn.startAnimation(scaleUp);
+                if (!isForceUpdate) {
+                    Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_settingsFragment);
+                } else {
+                    showToast("App Update REQUIRED");
+                }
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.settingsBtn.startAnimation(scaleDown);
             }
             return true;
         });
