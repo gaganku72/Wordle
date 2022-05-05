@@ -8,7 +8,9 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -17,6 +19,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -93,7 +96,7 @@ public class GameFragment extends BaseFragment {
 
     private ArrayList<RowModel> rowsList;
 
-    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false;
+    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false, isThemeBlack;
     private final ArrayList<Boolean> correctCol = new ArrayList<>();
 
     public GameFragment() {
@@ -124,6 +127,7 @@ public class GameFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         sessionManager = new SessionManager(getContext());
+        setTheme();
         initCorrectCol();
         setVibration();
         CommonValues.currentFragment = CommonValues.gameFragment;
@@ -146,8 +150,58 @@ public class GameFragment extends BaseFragment {
             }
             getCurrentDate();
             setupOnClicks();
+            setUpRowAnims();
             getAppData();
         }, 300);
+    }
+
+    private void setUpRowAnims() {
+
+    }
+
+    private void setTheme() {
+        isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (!isThemeBlack) {
+            binding.row11.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row12.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row13.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row14.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row15.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row21.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row22.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row23.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row24.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row25.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row31.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row32.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row33.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row34.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row35.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row41.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row42.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row43.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row44.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row45.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row51.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row52.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row53.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row54.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row55.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row61.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row62.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row63.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row64.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row65.setTextColor(getContext().getColor(R.color.no_bg_txt));
+        }
+    }
+
+    private void setBoxColor(TextView textView) {
+        textView.setTextColor(getContext().getColor(R.color.white));
     }
 
     private void setVibration() {
@@ -1802,6 +1856,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -1810,6 +1865,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -1818,6 +1874,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -1826,6 +1883,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -1835,6 +1893,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row15.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -1846,6 +1905,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -1854,6 +1914,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -1862,6 +1923,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -1870,6 +1932,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -1879,6 +1942,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row25.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -1890,6 +1954,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -1898,6 +1963,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -1906,6 +1972,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -1914,6 +1981,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -1924,6 +1992,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row35.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -1935,6 +2004,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -1943,6 +2013,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -1951,6 +2022,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -1959,6 +2031,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -1969,6 +2042,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row45.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -1980,6 +2054,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -1988,6 +2063,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -1996,6 +2072,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -2004,6 +2081,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -2013,6 +2091,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row55.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -2024,6 +2103,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -2032,6 +2112,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -2040,6 +2121,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -2048,6 +2130,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
@@ -2058,6 +2141,7 @@ public class GameFragment extends BaseFragment {
                         binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
                         Handler handler1 = new Handler();
                         handler1.postDelayed(() -> setMuliplayerLost(), 500);
                     }, 250);
@@ -2068,6 +2152,7 @@ public class GameFragment extends BaseFragment {
                         binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
                         showLostGameViews();
                     }, 250);
                 }
@@ -2085,6 +2170,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -2093,6 +2179,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -2101,6 +2188,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -2109,6 +2197,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -2119,6 +2208,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row15.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -2130,6 +2220,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -2138,6 +2229,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -2146,6 +2238,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -2154,6 +2247,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -2164,6 +2258,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row25.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -2175,6 +2270,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -2183,6 +2279,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -2191,6 +2288,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -2199,6 +2297,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -2209,6 +2308,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row35.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -2220,6 +2320,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -2228,6 +2329,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -2236,6 +2338,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -2244,6 +2347,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -2254,6 +2358,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row45.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -2265,6 +2370,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -2273,6 +2379,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -2281,6 +2388,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -2289,6 +2397,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -2299,6 +2408,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row55.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -2310,6 +2420,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -2318,6 +2429,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -2326,6 +2438,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -2334,6 +2447,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
@@ -2343,6 +2457,7 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
                         binding.lose.setVisibility(View.VISIBLE);
                         Handler handler1 = new Handler();
                         handler1.postDelayed(() -> setMuliplayerLost(), 500);
@@ -2354,6 +2469,7 @@ public class GameFragment extends BaseFragment {
                         binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
                         binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
                         showLostGameViews();
                     }, 250);
                 }
@@ -2405,6 +2521,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -2413,6 +2530,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -2421,6 +2539,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -2429,6 +2548,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -2438,6 +2558,7 @@ public class GameFragment extends BaseFragment {
                     index5("row1");
                     binding.row15.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -2449,6 +2570,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -2457,6 +2579,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -2465,6 +2588,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -2473,6 +2597,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -2482,6 +2607,7 @@ public class GameFragment extends BaseFragment {
                     index5("row2");
                     binding.row25.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -2493,6 +2619,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -2501,6 +2628,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -2509,6 +2637,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -2517,6 +2646,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -2526,6 +2656,7 @@ public class GameFragment extends BaseFragment {
                     index5("row3");
                     binding.row35.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -2537,6 +2668,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -2545,6 +2677,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -2553,6 +2686,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -2561,6 +2695,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -2570,6 +2705,7 @@ public class GameFragment extends BaseFragment {
                     index5("row4");
                     binding.row45.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -2581,6 +2717,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -2589,6 +2726,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -2597,6 +2735,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -2605,6 +2744,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -2614,6 +2754,7 @@ public class GameFragment extends BaseFragment {
                     index5("row5");
                     binding.row55.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -2625,6 +2766,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -2633,6 +2775,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -2641,6 +2784,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -2649,6 +2793,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
@@ -2658,6 +2803,7 @@ public class GameFragment extends BaseFragment {
                     index5("row6");
                     binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row65.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row65);
                 }, 250);
                 setDataInDB(6);
             }
@@ -3018,14 +3164,29 @@ public class GameFragment extends BaseFragment {
         if (row == 1) {
             if (current == 1) {
                 binding.row11.setText(alphabet);
+                binding.row11.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row11.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row12.setText(alphabet);
+                binding.row12.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row12.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row13.setText(alphabet);
+                binding.row13.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row13.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row14.setText(alphabet);
+                binding.row14.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row14.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row15.setText(alphabet);
+                binding.row15.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row15.startAnimation(scaleDown),120);
             } else {
                 return;
             }
@@ -3033,14 +3194,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 2) {
             if (current == 1) {
                 binding.row21.setText(alphabet);
+                binding.row21.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row21.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row22.setText(alphabet);
+                binding.row22.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row22.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row23.setText(alphabet);
+                binding.row23.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row23.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row24.setText(alphabet);
+                binding.row24.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row24.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row25.setText(alphabet);
+                binding.row25.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row25.startAnimation(scaleDown),120);
             } else {
                 return;
             }
@@ -3048,14 +3224,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 3) {
             if (current == 1) {
                 binding.row31.setText(alphabet);
+                binding.row31.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row31.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row32.setText(alphabet);
+                binding.row32.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row32.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row33.setText(alphabet);
+                binding.row33.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row33.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row34.setText(alphabet);
+                binding.row34.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row34.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row35.setText(alphabet);
+                binding.row35.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row35.startAnimation(scaleDown),120);
             } else {
                 return;
             }
@@ -3063,14 +3254,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 4) {
             if (current == 1) {
                 binding.row41.setText(alphabet);
+                binding.row41.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row41.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row42.setText(alphabet);
+                binding.row42.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row42.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row43.setText(alphabet);
+                binding.row43.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row43.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row44.setText(alphabet);
+                binding.row44.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row44.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row45.setText(alphabet);
+                binding.row45.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row45.startAnimation(scaleDown),120);
             } else {
                 return;
             }
@@ -3078,14 +3284,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 5) {
             if (current == 1) {
                 binding.row51.setText(alphabet);
+                binding.row51.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row51.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row52.setText(alphabet);
+                binding.row52.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row52.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row53.setText(alphabet);
+                binding.row53.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row53.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row54.setText(alphabet);
+                binding.row54.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row54.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row55.setText(alphabet);
+                binding.row55.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row55.startAnimation(scaleDown),120);
             } else {
                 return;
             }
@@ -3093,14 +3314,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 6) {
             if (current == 1) {
                 binding.row61.setText(alphabet);
+                binding.row61.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row61.startAnimation(scaleDown),120);
             } else if (current == 2) {
                 binding.row62.setText(alphabet);
+                binding.row62.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row62.startAnimation(scaleDown),120);
             } else if (current == 3) {
                 binding.row63.setText(alphabet);
+                binding.row63.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row63.startAnimation(scaleDown),120);
             } else if (current == 4) {
                 binding.row64.setText(alphabet);
+                binding.row64.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row64.startAnimation(scaleDown),120);
             } else if (current == 5) {
                 binding.row65.setText(alphabet);
+                binding.row65.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row65.startAnimation(scaleDown),120);
             } else {
                 return;
             }

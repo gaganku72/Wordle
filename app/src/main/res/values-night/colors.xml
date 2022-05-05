@@ -7,10 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="no_bg_txt">#000000</color>
     <color name="mainbg">#FFFFFFFF</color>
-    <color name="main_second">#565656</color>
+    <color name="main_second">#3A3A3C</color>
     <color name="stroke_color">#707070</color>
-    <color name="correct_color">#12C96B</color>
-    <color name="has_color">#FFB800</color>
-    <color name="keyboard_button">#848484</color>
+    <color name="correct_color">#6AAA64</color>
+    <color name="has_color">#C9B458</color>
+    <color name="keyboard_button">#818384</color>
 </resources>

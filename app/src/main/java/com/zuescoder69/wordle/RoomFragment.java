@@ -78,6 +78,10 @@ public class RoomFragment extends BaseFragment {
         binding.progressBar.setVisibility(View.GONE);
         binding.createRoomBtn.setVisibility(View.VISIBLE);
         binding.joinRoomBtn.setVisibility(View.VISIBLE);
+
+        if (getArguments() != null) {
+            binding.roomId.setText(getArguments().getString("rooomId"));
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -85,6 +89,8 @@ public class RoomFragment extends BaseFragment {
         binding.createRoomBtn.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.createRoomBtn.startAnimation(scaleUp);
+                binding.progressBar.setVisibility(View.VISIBLE);
+                showToast("Creating room", getContext(), getActivity());
                 createRoom();
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.createRoomBtn.startAnimation(scaleDown);
@@ -241,6 +247,7 @@ public class RoomFragment extends BaseFragment {
                                                                     CommonValues.roomIds.add(newRoomId);
                                                                     RoomFragmentDirections.ActionRoomFragmentToLobbyFragment action = RoomFragmentDirections.actionRoomFragmentToLobbyFragment(newRoomId);
                                                                     Navigation.findNavController(getView()).navigate(action);
+                                                                    binding.progressBar.setVisibility(View.GONE);
                                                                 } else {
                                                                     getAnswer();
                                                                 }

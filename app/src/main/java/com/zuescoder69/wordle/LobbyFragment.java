@@ -1,8 +1,11 @@
 package com.zuescoder69.wordle;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,12 +17,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.dynamiclinks.DynamicLink;
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
+import com.google.firebase.dynamiclinks.ShortDynamicLink;
 import com.zuescoder69.wordle.databinding.FragmentLobbyBinding;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
@@ -86,6 +93,58 @@ public class LobbyFragment extends BaseFragment {
             }
             return true;
         });
+
+        binding.roomIdLyt.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.roomIdLyt.startAnimation(scaleUp);
+                createLink();
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.roomIdLyt.startAnimation(scaleDown);
+            }
+            return true;
+        });
+    }
+
+    private void createLink() {
+        String shareLink = "https://wordl.page.link/?" +
+                "link=https://play.google.com/store/apps/details?id=com.zuescoder69.wordle/roomId-" + roomId +
+                "&apn=" + getContext().getPackageName() +
+                "&st=" + "Wordle" +
+                "&sd=" + "Join the room and let's play." +
+                "&si=" + "https://firebasestorage.googleapis.com/v0/b/name-place-animal-thing-b8644.appspot.com/o/icon.png?alt=media&token=85ac5cda-7e13-439b-9106-713430e0d5c3";
+
+        Task<ShortDynamicLink> shortLinkTask = FirebaseDynamicLinks.getInstance().createDynamicLink()
+                .setLongLink(Uri.parse(shareLink))
+                .buildShortDynamicLink()
+                .addOnCompleteListener(getActivity(), task -> {
+                    if (task.isSuccessful()) {
+                        // Short link created
+                        Log.d("123DEMON123", "createLink: success");
+                        Uri shortLink = task.getResult().getShortLink();
+
+                        try {
+                            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                            String shareMessage = "Hey join the room using this link:\n" + shortLink.toString();
+                            shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
+                            shareIntent.setType("text/plain");
+                            startActivity(Intent.createChooser(shareIntent, "choose one"));
+                        } catch (Exception e) {
+                            Log.e("123DEMON123", e.getMessage());
+                        }
+                    } else {
+                        try {
+                            Log.d("123DEMON123", "createLink: failed");
+                            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                            shareIntent.setType("text/plain");
+                            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Worlde");
+                            String shareMessage = "Hey the room ID is:\n" + roomId;
+                            shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
+                            startActivity(Intent.createChooser(shareIntent, "choose one"));
+                        } catch (Exception e) {
+                            Log.e("123DEMON123", e.getMessage());
+                        }
+                    }
+                });
     }
 
     private void getLobbyData() {
