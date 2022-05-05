@@ -14,6 +14,7 @@ import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.navigation.Navigation;
 
 import com.google.android.gms.ads.AdError;
@@ -47,6 +48,7 @@ public class MenuFragment extends BaseFragment {
     private Animation scaleUp, scaleDown;
     private boolean isForceUpdate = false;
     private String adFreeBtnText = "", adFreeMilliSeconds = "";
+    private SessionManager sessionManager;
 
     public MenuFragment() {
         // Required empty public constructor
@@ -57,6 +59,7 @@ public class MenuFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
+        sessionManager = new SessionManager(getContext());
     }
 
     @Override
@@ -71,13 +74,23 @@ public class MenuFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         binding.progressBar.setVisibility(View.VISIBLE);
+        setTheme();
         getCurrentDate();
         setupOnClicks();
         getInitialData();
     }
 
+    private void setTheme() {
+        boolean isDarkTheme = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isDarkTheme) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+    }
+
     private void setUpRewardedAd() {
-        if (CommonValues.mRewardedAd == null) {
+        if (CommonValues.mRewardedAd == null && getActivity() != null) {
             AdRequest adRequest = new AdRequest.Builder().build();
             RewardedAd.load(getActivity(), CommonValues.rewardAdId,
                     adRequest, new RewardedAdLoadCallback() {
@@ -144,7 +157,6 @@ public class MenuFragment extends BaseFragment {
                     } else {
                         isForceUpdate = true;
                     }
-                    SessionManager sessionManager = new SessionManager(getContext());
                     boolean isListAdded = sessionManager.getBooleanKey(Params.GUESS_WORD_LIST_ADDED);
                     if (!isListAdded) {
                         Log.d("DEMON", "YES");

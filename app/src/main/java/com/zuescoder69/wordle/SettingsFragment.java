@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -48,8 +49,8 @@ public class SettingsFragment extends BaseFragment {
     }
 
     private void setUpUI() {
-        binding.themeGroup.setVisibility(View.GONE);
-        binding.themeTxt.setVisibility(View.GONE);
+//        binding.themeGroup.setVisibility(View.GONE);
+//        binding.themeTxt.setVisibility(View.GONE);
         themeDark = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
         vibration = sessionManager.getBooleanKey(CommonValues.VIBRATION);
 
@@ -70,9 +71,10 @@ public class SettingsFragment extends BaseFragment {
         binding.themeGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == binding.themeDark.getId()) {
                 sessionManager.addBooleanKey(CommonValues.THEME_DARK, true);
-                changeTheme();
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             } else {
                 sessionManager.addBooleanKey(CommonValues.THEME_DARK, false);
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             }
         });
 
