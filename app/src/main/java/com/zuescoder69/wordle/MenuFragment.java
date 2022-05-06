@@ -83,9 +83,9 @@ public class MenuFragment extends BaseFragment {
     private void setTheme() {
         boolean isDarkTheme = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
         if (isDarkTheme) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
 

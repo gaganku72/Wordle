@@ -76,9 +76,9 @@ public class SettingsFragment extends BaseFragment {
         vibration = sessionManager.getBooleanKey(CommonValues.VIBRATION);
 
         if (themeDark) {
-            binding.themeDark.setChecked(true);
-        } else {
             binding.themeLight.setChecked(true);
+        } else {
+            binding.themeDark.setChecked(true);
         }
 
         if (vibration) {
@@ -92,10 +92,10 @@ public class SettingsFragment extends BaseFragment {
     private void setUpOnClicks() {
         binding.themeGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == binding.themeDark.getId()) {
-                sessionManager.addBooleanKey(CommonValues.THEME_DARK, true);
+                sessionManager.addBooleanKey(CommonValues.THEME_DARK, false);
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             } else {
-                sessionManager.addBooleanKey(CommonValues.THEME_DARK, false);
+                sessionManager.addBooleanKey(CommonValues.THEME_DARK, true);
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             }
         });
@@ -111,7 +111,7 @@ public class SettingsFragment extends BaseFragment {
         binding.logoutBtn.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.logoutBtn.startAnimation(scaleUp);
-
+                sessionManager.clearSession();
                 mGoogleSignInClient.signOut();
                 mAuth.signOut();
                 Navigation.findNavController(getView()).navigate(R.id.action_settingsFragment_to_loginFragment);

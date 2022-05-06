@@ -21,6 +21,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
@@ -49,12 +50,14 @@ public class LoginFragment extends BaseFragment {
     private DatabaseReference databaseReference;
     private NavController navCo;
     private Animation scaleUp, scaleDown;
+    private SessionManager sessionManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
+        sessionManager = new SessionManager(getContext());
     }
 
     @Override
@@ -72,7 +75,17 @@ public class LoginFragment extends BaseFragment {
         NavHostFragment navHostFragment = (NavHostFragment) getActivity().getSupportFragmentManager()
                 .findFragmentById(R.id.mainFragment);
         navCo = navHostFragment.getNavController();
+        setTheme();
         startGoogleLogin();
+    }
+
+    private void setTheme() {
+        boolean isDarkTheme = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isDarkTheme) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -143,9 +156,8 @@ public class LoginFragment extends BaseFragment {
                             /**
                              * Adding user detals in the Shared Preferences for the user session
                              */
-                            SessionManager sessionManager = new SessionManager(getContext());
                             sessionManager.createLoginSession(userEmailID, userfirebaseid, userName, firstName);
-                            sessionManager.addBooleanKey(CommonValues.THEME_DARK, true);
+                            sessionManager.addBooleanKey(CommonValues.THEME_DARK, false);
                             sessionManager.addBooleanKey(CommonValues.VIBRATION, true);
 
                             if (isNew) {

@@ -161,7 +161,7 @@ public class GameFragment extends BaseFragment {
 
     private void setTheme() {
         isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
-        if (!isThemeBlack) {
+        if (isThemeBlack) {
             binding.row11.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row12.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row13.setTextColor(getContext().getColor(R.color.no_bg_txt));
