@@ -151,7 +151,12 @@ public class LoginFragment extends BaseFragment {
                             String userEmailID = FirebaseAuth.getInstance().getCurrentUser().getEmail();
                             String userName = FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
                             int firstSpace = userName.indexOf(" "); // detect the first space character
-                            String firstName = userName.substring(0, firstSpace);
+                            String firstName;
+                            if (firstSpace > 0){
+                                firstName = userName.substring(0, firstSpace);
+                            } else {
+                                firstName = userName;
+                            }
 
                             /**
                              * Adding user detals in the Shared Preferences for the user session

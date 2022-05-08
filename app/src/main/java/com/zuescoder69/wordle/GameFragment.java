@@ -150,13 +150,8 @@ public class GameFragment extends BaseFragment {
             }
             getCurrentDate();
             setupOnClicks();
-            setUpRowAnims();
             getAppData();
         }, 300);
-    }
-
-    private void setUpRowAnims() {
-
     }
 
     private void setTheme() {
@@ -314,11 +309,24 @@ public class GameFragment extends BaseFragment {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                     String toShowAd = (String) map.get("ShowAd");
+                    ArrayList<String> userId = new ArrayList<>();
+                    for (int i = 1; i < 11; i++) {
+                        if (map.containsKey("UserId" + i)) {
+                            userId.add((String) map.get("UserId" + i));
+                        }
+                    }
                     if (toShowAd.equalsIgnoreCase("true")) {
-                        CommonValues.isShowAd = true;
-                        loadAd();
-                        loadRewardedAd();
-                        setRewardedCallbacks();
+                        String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
+                        if (userId.contains(currentUserId)) {
+                            CommonValues.isShowAd = false;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                        } else {
+                            CommonValues.isShowAd = true;
+                            loadAd();
+                            loadRewardedAd();
+                            setRewardedCallbacks();
+                        }
                     } else {
                         CommonValues.isShowAd = false;
                         binding.progress.setVisibility(View.GONE);
@@ -1251,73 +1259,181 @@ public class GameFragment extends BaseFragment {
             wordleLogic(list);
             isEnterEnabled = true;
         }
-//        else {
-//            noWordAnimation();
-//        }
+        else {
+            noWordAnimation();
+        }
     }
 
-//    private void noWordAnimation() {
-//        Handler handler = new Handler();
-//        handler.postDelayed(() -> {
-//            ObjectAnimator animation = new ObjectAnimator();
-//            if (row == 1) {
-//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 100f);
-//            } else if (row == 2) {
-//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 100f);
-//            } else if (row == 3) {
-//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 100f);
-//            } else if (row == 4) {
-//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 100f);
-//            } else if (row == 5) {
-//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 100f);
-//            } else if (row == 6) {
-//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 100f);
-//            }
-//            animation.setDuration(100);
-//            animation.start();
-//        }, 100);
-//
-//        handler.postDelayed(() -> {
-//            ObjectAnimator animation = new ObjectAnimator();
-//            if (row == 1) {
-//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", -100f);
-//            } else if (row == 2) {
-//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", -100f);
-//            } else if (row == 3) {
-//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", -100f);
-//            } else if (row == 4) {
-//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", -100f);
-//            } else if (row == 5) {
-//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", -100f);
-//            } else if (row == 6) {
-//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", -100f);
-//            }
-//            animation.setDuration(100);
-//            animation.start();
-//        }, 200);
-//
-//        handler.postDelayed(() -> {
-//            ObjectAnimator animation = new ObjectAnimator();
-//            if (row == 1) {
-//                animation = ObjectAnimator.ofFloat(binding.row1, "translationX", 0f);
-//            } else if (row == 2) {
-//                animation = ObjectAnimator.ofFloat(binding.row2, "translationX", 0f);
-//            } else if (row == 3) {
-//                animation = ObjectAnimator.ofFloat(binding.row3, "translationX", 0f);
-//            } else if (row == 4) {
-//                animation = ObjectAnimator.ofFloat(binding.row4, "translationX", 0f);
-//            } else if (row == 5) {
-//                animation = ObjectAnimator.ofFloat(binding.row5, "translationX", 0f);
-//            } else if (row == 6) {
-//                animation = ObjectAnimator.ofFloat(binding.row6, "translationX", 0f);
-//            }
-//            animation.setDuration(100);
-//            animation.start();
-//            isEnterEnabled = true;
-//        }, 300);
-//        vibrator.vibrate(300);
-//        showToast("Not in word list");
-//    }
+    private void noWordAnimation() {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", 100f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", 100f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", 100f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", 100f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", 100f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", 100f);
+            }
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+        }, 100);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", -100f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", -100f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", -100f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", -100f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", -100f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", -100f);
+            }
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+        }, 200);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", 0f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", 0f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", 0f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", 0f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", 0f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", 0f);
+            }
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+            isEnterEnabled = true;
+        }, 300);
+        vibrator.vibrate(300);
+        showToast("Not in word list");
+    }
 
     private <T> boolean containsAny(ArrayList<T> l1, ArrayList<T> l2) {
         for (T elem : l1) {

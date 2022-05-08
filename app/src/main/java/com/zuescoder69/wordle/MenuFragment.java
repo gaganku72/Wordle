@@ -1,6 +1,8 @@
 package com.zuescoder69.wordle;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -36,6 +38,7 @@ import com.zuescoder69.wordle.utils.CommonValues;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -136,14 +139,29 @@ public class MenuFragment extends BaseFragment {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
-                    CommonValues.versionCodeFirebase = (String) map.get("VersionCode");
+                    CommonValues.versionCodeFirebase = (String) map.get("MinVersionCode");
                     CommonValues.comeTomorrowMsg = (String) map.get("ComeTomorrowMsg");
                     String toShowAd = (String) map.get("ShowAd");
                     adFreeMilliSeconds = (String) map.get("AdFreeMilliSeconds");
                     adFreeBtnText = (String) map.get("AdFreeBtnText");
+                    ArrayList<String> userId = new ArrayList<>();
+                    for (int i = 1; i < 11; i++) {
+                        if (map.containsKey("UserId" + i)) {
+                            userId.add((String) map.get("UserId" + i));
+                        }
+                    }
                     if (toShowAd.equalsIgnoreCase("true")) {
-                        CommonValues.isShowAd = true;
-                        setUpRewardedAd();
+                        String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
+                        if (userId.contains(currentUserId)) {
+                            CommonValues.isShowAd = false;
+                            binding.progressBar.setVisibility(View.GONE);
+                            binding.dailyBtn.setVisibility(View.VISIBLE);
+                            binding.classicBtn.setVisibility(View.VISIBLE);
+                            binding.multiplayerBtn.setVisibility(View.VISIBLE);
+                        } else {
+                            CommonValues.isShowAd = true;
+                            setUpRewardedAd();
+                        }
                     } else {
                         CommonValues.isShowAd = false;
                         binding.progressBar.setVisibility(View.GONE);
@@ -152,7 +170,8 @@ public class MenuFragment extends BaseFragment {
                         binding.multiplayerBtn.setVisibility(View.VISIBLE);
                     }
 
-                    if (CommonValues.versionCode.equalsIgnoreCase(CommonValues.versionCodeFirebase)) {
+                    int firebaseVersionCode = Integer.parseInt(CommonValues.versionCodeFirebase);
+                    if (BuildConfig.VERSION_CODE >= firebaseVersionCode) {
                         isForceUpdate = false;
                     } else {
                         isForceUpdate = true;
@@ -273,7 +292,7 @@ public class MenuFragment extends BaseFragment {
                     bundle.putString("gameMode", "classic");
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_gameFragment, bundle);
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.classicBtn.startAnimation(scaleDown);
@@ -289,7 +308,7 @@ public class MenuFragment extends BaseFragment {
                     bundle.putString("gameMode", "daily");
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_gameFragment, bundle);
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.dailyBtn.startAnimation(scaleDown);
@@ -303,7 +322,7 @@ public class MenuFragment extends BaseFragment {
                 if (!isForceUpdate) {
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_statsFragment);
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.dailyBtn.startAnimation(scaleDown);
@@ -317,7 +336,7 @@ public class MenuFragment extends BaseFragment {
                 if (!isForceUpdate) {
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_settingsFragment);
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.settingsBtn.startAnimation(scaleDown);
@@ -355,7 +374,7 @@ public class MenuFragment extends BaseFragment {
                         showToast("Ad Free Period");
                     }
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.videoAd.startAnimation(scaleDown);
@@ -369,13 +388,23 @@ public class MenuFragment extends BaseFragment {
                 if (!isForceUpdate) {
                     Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_roomFragment);
                 } else {
-                    showToast("App Update REQUIRED");
+                    forceUpdate();
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.multiplayerBtn.startAnimation(scaleDown);
             }
             return true;
         });
+    }
+
+    private void forceUpdate() {
+        showToast("App Update REQUIRED\nRedirecting to Play Store");
+        final String appPackageName = getContext().getPackageName(); // getPackageName() from Context or Activity object
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+        } catch (android.content.ActivityNotFoundException anfe) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+        }
     }
 
     private void showToast(String msg) {
