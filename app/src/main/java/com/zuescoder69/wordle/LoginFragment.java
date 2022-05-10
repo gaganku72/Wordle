@@ -21,6 +21,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
@@ -49,12 +50,14 @@ public class LoginFragment extends BaseFragment {
     private DatabaseReference databaseReference;
     private NavController navCo;
     private Animation scaleUp, scaleDown;
+    private SessionManager sessionManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
+        sessionManager = new SessionManager(getContext());
     }
 
     @Override
@@ -72,7 +75,17 @@ public class LoginFragment extends BaseFragment {
         NavHostFragment navHostFragment = (NavHostFragment) getActivity().getSupportFragmentManager()
                 .findFragmentById(R.id.mainFragment);
         navCo = navHostFragment.getNavController();
+        setTheme();
         startGoogleLogin();
+    }
+
+    private void setTheme() {
+        boolean isDarkTheme = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isDarkTheme) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -138,13 +151,20 @@ public class LoginFragment extends BaseFragment {
                             String userEmailID = FirebaseAuth.getInstance().getCurrentUser().getEmail();
                             String userName = FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
                             int firstSpace = userName.indexOf(" "); // detect the first space character
-                            String firstName = userName.substring(0, firstSpace);
+                            String firstName;
+                            if (firstSpace > 0){
+                                firstName = userName.substring(0, firstSpace);
+                            } else {
+                                firstName = userName;
+                            }
 
                             /**
                              * Adding user detals in the Shared Preferences for the user session
                              */
-                            SessionManager sessionManager = new SessionManager(getContext());
                             sessionManager.createLoginSession(userEmailID, userfirebaseid, userName, firstName);
+                            sessionManager.addBooleanKey(CommonValues.THEME_DARK, false);
+                            sessionManager.addBooleanKey(CommonValues.VIBRATION, true);
+
                             if (isNew) {
                                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userfirebaseid);
                                 Map setValues = new HashMap();
@@ -153,12 +173,18 @@ public class LoginFragment extends BaseFragment {
                                 setValues.put("NewUser", "Yes");
                                 databaseReference.setValue(setValues);
 
+                                new Handler().postDelayed(() -> {
+                                    binding.progressBar.setVisibility(View.GONE);
+                                    showToast("Welcome " + userName);
+                                    navCo.navigate(R.id.action_loginFragment_to_onBoardingFragment);
+                                }, 2000);
+                            } else {
+                                new Handler().postDelayed(() -> {
+                                    binding.progressBar.setVisibility(View.GONE);
+                                    showToast("Welcome " + userName);
+                                    navCo.navigate(R.id.action_loginFragment_to_menu_fragment);
+                                }, 2000);
                             }
-                            new Handler().postDelayed(() -> {
-                                binding.progressBar.setVisibility(View.GONE);
-                                showToast("Welcome " + userName);
-                                navCo.navigate(R.id.action_loginFragment_to_menu_fragment);
-                            }, 2000);
 
                         } else {
                             Log.d("LoginFragment", "UnSuccessfull");

@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/mainbg"
+    android:fillViewport="true"
+    tools:context=".OnBoardingFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="Wordle"
+            android:textColor="@color/no_bg_txt"
+            android:textSize="28sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/view7"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/no_bg_txt"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+        <View
+            android:id="@+id/view8"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/no_bg_txt"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/descTxt" />
+
+        <View
+            android:id="@+id/view9"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/no_bg_txt"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt3" />
+
+        <TextView
+            android:id="@+id/descTxt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="Guess the WORDLE in six tries.\n\nEach guess must be a valid five-letter word. Hit the enter button to submit.\n\nAfter each guess, the color of the tiles will change to show how close your guess was to the word."
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/view7" />
+
+        <TextView
+            android:id="@+id/row1_1"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/alphabets_correct_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row1_2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt"
+            android:text="W" />
+
+        <TextView
+            android:id="@+id/row1_2"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row1_3"
+            app:layout_constraintStart_toEndOf="@+id/row1_1"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt"
+            android:text="E" />
+
+        <TextView
+            android:id="@+id/row1_3"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row1_4"
+            app:layout_constraintStart_toEndOf="@+id/row1_2"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt"
+            android:text="A" />
+
+        <TextView
+            android:id="@+id/row1_4"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row1_5"
+            app:layout_constraintStart_toEndOf="@+id/row1_3"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt"
+            android:text="R" />
+
+        <TextView
+            android:id="@+id/row1_5"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="64dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/row1_4"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt"
+            android:text="Y" />
+
+        <TextView
+            android:id="@+id/examplesTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="Examples"
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/view8" />
+
+        <TextView
+            android:id="@+id/examplesTxt1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="The letter W is in the word and in the correct spot."
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/row1_1" />
+
+        <TextView
+            android:id="@+id/row2_1"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row2_2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt1"
+            android:text="P" />
+
+        <TextView
+            android:id="@+id/row2_2"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_has_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row2_3"
+            app:layout_constraintStart_toEndOf="@+id/row2_1"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt1"
+            android:text="I" />
+
+        <TextView
+            android:id="@+id/row2_3"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row2_4"
+            app:layout_constraintStart_toEndOf="@+id/row2_2"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt1"
+            android:text="L" />
+
+        <TextView
+            android:id="@+id/row2_4"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row2_5"
+            app:layout_constraintStart_toEndOf="@+id/row2_3"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt1"
+            android:text="L" />
+
+        <TextView
+            android:id="@+id/row2_5"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="64dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/row2_4"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt1"
+            android:text="S" />
+
+        <TextView
+            android:id="@+id/examplesTxt2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="The letter I is in the word but in the wrong spot."
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/row2_1" />
+
+        <TextView
+            android:id="@+id/row3_1"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row3_2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt2"
+            android:text="V" />
+
+        <TextView
+            android:id="@+id/row3_2"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row3_3"
+            app:layout_constraintStart_toEndOf="@+id/row3_1"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt2"
+            android:text="A" />
+
+        <TextView
+            android:id="@+id/row3_3"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row3_4"
+            app:layout_constraintStart_toEndOf="@+id/row3_2"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt2"
+            android:text="G" />
+
+        <TextView
+            android:id="@+id/row3_4"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/alphabets_wrong_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toStartOf="@+id/row3_5"
+            app:layout_constraintStart_toEndOf="@+id/row3_3"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt2"
+            android:text="U" />
+
+        <TextView
+            android:id="@+id/row3_5"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="64dp"
+            android:background="@drawable/alphabets_bg"
+            android:fontFamily="@font/arial_bold"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/row3_4"
+            app:layout_constraintTop_toBottomOf="@+id/examplesTxt2"
+            android:text="E" />
+
+        <TextView
+            android:id="@+id/examplesTxt3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="The letter U is not in the word in any spot."
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/row3_1" />
+
+        <TextView
+            android:id="@+id/textView16"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/arial_bold"
+            android:text="A new WORDLE will be available each day!\n\nOr play using the UNLIMITED gamemode\n\nAlso challenge friends to see who can find the WORDLE faster!"
+            android:textColor="@color/no_bg_txt"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/view9" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/playGameBtn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/button_bg"
+            android:fontFamily="@font/arial_bold"
+            android:text="Play WORDLE"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView16" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>
