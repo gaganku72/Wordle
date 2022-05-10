@@ -31,6 +31,22 @@ public abstract class BaseFragment extends Fragment {
         }catch (Exception e){
             Log.e("BaseFragment", e.getMessage());
         }
+    }
 
+    public void showToastOnHeight(String msg, Context context, Activity activity) {
+        try {
+            LayoutInflater inflater = getLayoutInflater();
+            View layout = inflater.inflate(R.layout.toast_on_height, activity.findViewById(R.id.toast_layout));
+            Toast creatingRoomToast;
+            TextView toastContent = layout.findViewById(R.id.contentTV);
+            creatingRoomToast = new Toast(context);
+            creatingRoomToast.setGravity(Gravity.BOTTOM, 0, 0);
+            creatingRoomToast.setDuration(Toast.LENGTH_SHORT);
+            creatingRoomToast.setView(layout);
+            toastContent.setText(msg);
+            creatingRoomToast.show();
+        }catch (Exception e){
+            Log.e("BaseFragment", e.getMessage());
+        }
     }
 }

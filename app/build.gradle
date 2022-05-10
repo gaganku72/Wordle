@@ -3,6 +3,7 @@ plugins {
     id 'com.google.gms.google-services'
     id 'com.google.firebase.firebase-perf'
     id 'com.google.firebase.crashlytics'
+    id 'androidx.navigation.safeargs'
 }
 
 android {
@@ -26,8 +27,8 @@ android {
         applicationId "com.zuescoder69.wordle"
         minSdk 23
         targetSdk 31
-        versionCode 1
-        versionName "1.0"
+        versionCode 7
+        versionName "1.0.7"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -70,7 +71,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-database:19.2.1'
     implementation 'com.google.firebase:firebase-perf:19.0.5'
     implementation 'com.google.firebase:firebase-dynamic-links:19.0.0'
-    implementation 'com.google.firebase:firebase-ads:18.3.0'
+    implementation 'com.google.firebase:firebase-ads:20.6.0'
     implementation 'com.google.android.gms:play-services-auth:20.1.0'
     implementation 'com.google.firebase:firebase-crashlytics:18.2.9'
     implementation 'com.google.firebase:firebase-analytics:20.1.1'

@@ -2,11 +2,13 @@ package com.zuescoder69.wordle;
 
 import static android.content.Context.VIBRATOR_SERVICE;
 
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -15,11 +17,20 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -45,28 +56,46 @@ import java.util.Map;
 import java.util.Random;
 
 public class GameFragment extends BaseFragment {
-    private static final String TAG = "DEMON";
+
+    private final String TAG = "DEMON";
+    private final String wordInDB = "Word";
+    private final String classic = Params.CLASSIC_GAME_MODE;
+    private final String daily = Params.DAILY_GAME_MODE;
+    private final String multi = Params.MULTI_GAME_MODE;
+    private long vibrationTime = 80;
+
     private FragmentGameBinding binding;
+
     private int row = 1;
     private int current = 1;
+
     private String wordsCount;
     private String answer;
     private String currentWord;
-    private final String wordInDB = "Word";
     private String gameMode;
     private String currentDate;
-    private DatabaseReference databaseReference;
     private String userId;
-    private Animation scaleUp, scaleDown;
     private String wordId;
+    private String roomId;
+    private String lobbyStatus = "";
+    private String winnerId = "";
+    private String winnerName = "";
+    private String userStatus1 = "";
+    private String userStatus2 = "";
+    private String userId1 = "";
+    private String userId2 = "";
+
+    private Animation scaleUp, scaleDown;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
-    private ArrayList<RowModel> rowsList;
+    private DatabaseReference databaseReference;
     private Vibrator vibrator;
-    private long vibrationTime = 80;
-    private final String classic = Params.CLASSIC_GAME_MODE;
-    private final String daily = Params.DAILY_GAME_MODE;
-    private boolean isPreviousGame;
+    private InterstitialAd mInterstitialAd;
+
+    private ArrayList<RowModel> rowsList;
+
+    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false, isThemeBlack;
+    private final ArrayList<Boolean> correctCol = new ArrayList<>();
 
     public GameFragment() {
         // Required empty public constructor
@@ -85,7 +114,7 @@ public class GameFragment extends BaseFragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding = FragmentGameBinding.inflate(inflater, container, false);
@@ -95,16 +124,321 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        sessionManager = new SessionManager(getContext());
+        setTheme();
+        initCorrectCol();
+        setVibration();
+        CommonValues.currentFragment = CommonValues.gameFragment;
+        isAdFree = CommonValues.isAdFree;
         binding.victory.setVisibility(View.GONE);
         binding.lose.setVisibility(View.GONE);
-        sessionManager = new SessionManager(getContext());
+        binding.progress.setVisibility(View.VISIBLE);
+        binding.gameFragment.setVisibility(View.GONE);
+        binding.helpBtn.setVisibility(View.INVISIBLE);
+        binding.restartGameBtn.setVisibility(View.GONE);
+        binding.nextGameBtn.setVisibility(View.GONE);
+        binding.seeAnswerBtn.setVisibility(View.GONE);
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
-        getPreviousGameData();
-        setupOnClicks();
-        getCurrentDate();
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            getCurrentDate();
+            if (!gameMode.equalsIgnoreCase(multi)) {
+                getPreviousGameData();
+            } else {
+                getMultiplayerGameData();
+            }
+            setupOnClicks();
+            getAppData();
+        }, 300);
+    }
+
+    private void setTheme() {
+        isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isThemeBlack) {
+            binding.row11.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row12.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row13.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row14.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row15.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row21.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row22.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row23.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row24.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row25.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row31.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row32.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row33.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row34.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row35.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row41.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row42.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row43.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row44.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row45.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row51.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row52.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row53.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row54.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row55.setTextColor(getContext().getColor(R.color.no_bg_txt));
+
+            binding.row61.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row62.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row63.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row64.setTextColor(getContext().getColor(R.color.no_bg_txt));
+            binding.row65.setTextColor(getContext().getColor(R.color.no_bg_txt));
+        }
+    }
+
+    private void setBoxColor(TextView textView) {
+        textView.setTextColor(getContext().getColor(R.color.white));
+    }
+
+    private void setVibration() {
+        boolean vibration = sessionManager.getBooleanKey(CommonValues.VIBRATION);
+        if (vibration) {
+            vibrationTime = 80;
+        } else {
+            vibrationTime = 0;
+        }
+    }
+
+    private void initCorrectCol() {
+        for (int i = 0; i < 5; i++) {
+            correctCol.add(i, false);
+        }
+    }
+
+    private void getMultiplayerGameData() {
+        roomId = CommonValues.roomId;
+        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                    };
+                    Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                    answer = (String) map.get("Answer");
+                    lobbyStatus = (String) map.get("Lobby Status");
+                    wordId = (String) map.get("WordId");
+                    winnerId = (String) map.get("WinnerId");
+                    winnerName = (String) map.get("WinnerName");
+                    userStatus1 = (String) map.get("UserStatus1");
+                    userStatus2 = (String) map.get("UserStatus2");
+                    userId1 = (String) map.get("UserId1");
+                    userId2 = (String) map.get("UserId2");
+                    checkLobbyStatus();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void checkLobbyStatus() {
+        if (lobbyStatus.equalsIgnoreCase("Result")) {
+            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+            Map setValues = new HashMap();
+            setValues.put(wordInDB + wordId, "done");
+            databaseReference.updateChildren(setValues);
+
+            if (!TextUtils.isEmpty(winnerId)) {
+                if (userId.equalsIgnoreCase(winnerId)) {
+                    binding.victory.setVisibility(View.VISIBLE);
+                } else {
+                    binding.lose.setVisibility(View.VISIBLE);
+                }
+            }
+
+            Handler handler1 = new Handler();
+            handler1.postDelayed(() -> {
+                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("winnerName", winnerName);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                    }
+                }
+            }, 5000);
+        } else {
+            if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        Bundle bundle = new Bundle();
+                        bundle.putString("winnerName", "lost");
+                        bundle.putString("answer", answer);
+                        if (getView() != null) {
+                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                        }
+                    }
+                }, 5000);
+            }
+        }
+    }
+
+    private void setMuliplayerLost() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        Map setValues = new HashMap();
+        if (userId.equalsIgnoreCase(userId1)) {
+            setValues.put("UserStatus1", "no");
+        } else if (userId.equalsIgnoreCase(userId2)) {
+            setValues.put("UserStatus2", "no");
+        }
+        databaseReference.updateChildren(setValues);
+    }
+
+    private void getAppData() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("AppData");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                    };
+                    Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+                    String toShowAd = (String) map.get("ShowAd");
+                    ArrayList<String> userId = new ArrayList<>();
+                    for (int i = 1; i < 11; i++) {
+                        if (map.containsKey("UserId" + i)) {
+                            userId.add((String) map.get("UserId" + i));
+                        }
+                    }
+                    if (toShowAd.equalsIgnoreCase("true")) {
+                        String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
+                        if (userId.contains(currentUserId)) {
+                            CommonValues.isShowAd = false;
+                            CommonValues.isAdFree = true;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                            if (!gameLost) {
+                                binding.helpBtn.setVisibility(View.VISIBLE);
+                            }
+                        } else {
+                            CommonValues.isShowAd = true;
+                            loadAd();
+                            loadRewardedAd();
+                            setRewardedCallbacks();
+                        }
+                    } else {
+                        CommonValues.isShowAd = false;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void loadAd() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                        mInterstitialAd = interstitialAd;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        Log.i(TAG, loadAdError.getMessage());
+                        mInterstitialAd = null;
+                        binding.progress.setVisibility(View.GONE);
+                        binding.gameFragment.setVisibility(View.VISIBLE);
+                    }
+                });
+    }
+
+    private void loadRewardedAd() {
+        if (!gameMode.equalsIgnoreCase(multi)) {
+            if (CommonValues.mRewardedAd == null && CommonValues.isShowAd) {
+                AdRequest adRequest = new AdRequest.Builder().build();
+                RewardedAd.load(getActivity(), CommonValues.rewardAdId,
+                        adRequest, new RewardedAdLoadCallback() {
+                            @Override
+                            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                                // Handle the error.
+                                CommonValues.mRewardedAd = null;
+                                binding.progressBar.setVisibility(View.GONE);
+                                binding.gameFragment.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
+                                CommonValues.mRewardedAd = rewardedAd;
+                                binding.progressBar.setVisibility(View.GONE);
+                                binding.gameFragment.setVisibility(View.VISIBLE);
+                                if (!gameLost) {
+                                    binding.helpBtn.setVisibility(View.VISIBLE);
+                                }
+                            }
+                        });
+            } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+                binding.progressBar.setVisibility(View.GONE);
+                binding.gameFragment.setVisibility(View.VISIBLE);
+                if (!gameLost) {
+                    binding.helpBtn.setVisibility(View.VISIBLE);
+                }
+            }
+        }
+    }
+
+    private void setRewardedCallbacks() {
+        CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override
+            public void onAdClicked() {
+                super.onAdClicked();
+            }
+
+            @Override
+            public void onAdDismissedFullScreenContent() {
+                super.onAdDismissedFullScreenContent();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                super.onAdFailedToShowFullScreenContent(adError);
+            }
+
+            @Override
+            public void onAdImpression() {
+                super.onAdImpression();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAdShowedFullScreenContent() {
+                super.onAdShowedFullScreenContent();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 
     private void getPreviousGameData() {
+        boolean isPreviousGame;
         if (gameMode.equalsIgnoreCase(classic)) {
             isPreviousGame = sessionManager.getBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME);
         } else {
@@ -119,6 +453,14 @@ public class GameFragment extends BaseFragment {
                 lastRow = Integer.parseInt(lastRowString);
             } else {
                 answer = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ANSWER);
+                Log.d(TAG, "getPreviousGameData Answer: " + answer);
+                String lastDate = sessionManager.getStringKey(Params.KEY_LAST_DAILY_DATE);
+                if (!lastDate.equalsIgnoreCase(currentDate)) {
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
+                    getAnswer();
+                    dbHandler.dropTable(gameMode);
+                    return;
+                }
                 String lastRowString = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ROW);
                 lastRow = Integer.parseInt(lastRowString);
             }
@@ -278,7 +620,9 @@ public class GameFragment extends BaseFragment {
                                                     });
                                                 } else {
                                                     showToast(CommonValues.comeTomorrowMsg);
-                                                    Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                                    if (getView() != null) {
+                                                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                                                    }
                                                 }
                                             }
 
@@ -658,9 +1002,41 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnEnter.startAnimation(scaleUp);
                 vibrator.vibrate(vibrationTime);
-                if (current == 6) {
-                    if (row < 7) {
-                        submitWord();
+                if (isEnterEnabled) {
+                    if (current == 6) {
+                        if (row < 7 && row > 2) {
+                            if (mInterstitialAd != null && !isAdFree) {
+                                mInterstitialAd.show(getActivity());
+                                loadAd();
+                                loadRewardedAd();
+                                mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                                    @Override
+                                    public void onAdDismissedFullScreenContent() {
+                                        // Called when fullscreen content is dismissed.
+                                        submitWord();
+                                        Log.d("TAG", "The ad was dismissed.");
+                                    }
+
+                                    @Override
+                                    public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                        // Called when fullscreen content failed to show.
+                                        Log.d("TAG", "The ad failed to show.");
+                                    }
+
+                                    @Override
+                                    public void onAdShowedFullScreenContent() {
+                                        // Called when fullscreen content is shown.
+                                        // Make sure to set your reference to null so you don't
+                                        // show it a second time.
+                                        Log.d("TAG", "The ad was shown.");
+                                    }
+                                });
+                            } else {
+                                submitWord();
+                            }
+                        } else {
+                            submitWord();
+                        }
                     }
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
@@ -679,34 +1055,423 @@ public class GameFragment extends BaseFragment {
             }
             return true;
         });
+
+        binding.helpBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.helpBtn.startAnimation(scaleUp);
+                showHint();
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.helpBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
+    }
+
+    private void showHint() {
+        if (CommonValues.isAdFree) {
+            for (int i = 0; i < correctCol.size(); i++) {
+                if (!correctCol.get(i)) {
+                    binding.hintTv.setVisibility(View.VISIBLE);
+                    String hint = answer.charAt(i) + "";
+                    binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    break;
+                }
+            }
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                for (int i = 0; i < correctCol.size(); i++) {
+                    if (!correctCol.get(i)) {
+                        binding.hintTv.setVisibility(View.VISIBLE);
+                        String hint = answer.charAt(i) + "";
+                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void showLostGameViews() {
+        if (CommonValues.isShowAd || CommonValues.isAdFree) {
+            gameLost = true;
+            if (CommonValues.mRewardedAd != null || CommonValues.isAdFree) {
+                binding.helpBtn.setVisibility(View.INVISIBLE);
+                binding.nextGameBtn.setVisibility(View.VISIBLE);
+                binding.seeAnswerBtn.setVisibility(View.VISIBLE);
+                binding.restartGameBtn.setVisibility(View.VISIBLE);
+
+                binding.nextGameBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.nextGameBtn.startAnimation(scaleUp);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.nextGameBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+
+                binding.seeAnswerBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.seeAnswerBtn.startAnimation(scaleUp);
+                        seeAnswer();
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.seeAnswerBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+
+                binding.restartGameBtn.setOnTouchListener((view, motionEvent) -> {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        binding.restartGameBtn.startAnimation(scaleUp);
+                        restartGame();
+                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        binding.restartGameBtn.startAnimation(scaleDown);
+                    }
+                    return true;
+                });
+            }
+        } else {
+            Handler handler1 = new Handler();
+            handler1.postDelayed(() -> {
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("gameMode", classic);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                    }
+                } else {
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                    }
+                }
+            }, 5000);
+        }
+    }
+
+    private void restartGame() {
+        if (CommonValues.isAdFree) {
+            removeAllCharFromViews();
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                removeAllCharFromViews();
+            });
+        }
+    }
+
+    private void removeAllCharFromViews() {
+        current = 1;
+        row = 1;
+
+        binding.row11.setText("");
+        binding.row12.setText("");
+        binding.row13.setText("");
+        binding.row14.setText("");
+        binding.row15.setText("");
+
+        binding.row21.setText("");
+        binding.row22.setText("");
+        binding.row23.setText("");
+        binding.row24.setText("");
+        binding.row25.setText("");
+
+        binding.row31.setText("");
+        binding.row32.setText("");
+        binding.row33.setText("");
+        binding.row34.setText("");
+        binding.row35.setText("");
+
+        binding.row41.setText("");
+        binding.row42.setText("");
+        binding.row43.setText("");
+        binding.row44.setText("");
+        binding.row45.setText("");
+
+        binding.row51.setText("");
+        binding.row52.setText("");
+        binding.row53.setText("");
+        binding.row54.setText("");
+        binding.row55.setText("");
+
+        binding.row61.setText("");
+        binding.row62.setText("");
+        binding.row63.setText("");
+        binding.row64.setText("");
+        binding.row65.setText("");
+
+        binding.row11.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row12.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row13.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row14.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row15.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row21.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row22.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row23.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row24.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row25.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row31.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row32.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row33.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row34.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row35.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row41.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row42.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row43.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row44.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row45.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row51.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row52.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row53.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row54.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row55.setBackgroundResource(R.drawable.alphabets_bg);
+
+        binding.row61.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row62.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row63.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row64.setBackgroundResource(R.drawable.alphabets_bg);
+        binding.row65.setBackgroundResource(R.drawable.alphabets_bg);
+
+        gameLost = false;
+        binding.lose.setVisibility(View.GONE);
+        binding.restartGameBtn.setVisibility(View.GONE);
+        binding.nextGameBtn.setVisibility(View.GONE);
+        binding.seeAnswerBtn.setVisibility(View.GONE);
+    }
+
+    private void seeAnswer() {
+        if (CommonValues.isAdFree) {
+            binding.hintTv.setVisibility(View.VISIBLE);
+            binding.hintTv.setText("Wordle is - " + answer);
+            binding.restartGameBtn.setVisibility(View.GONE);
+            binding.seeAnswerBtn.setVisibility(View.GONE);
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+            CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
+                binding.hintTv.setVisibility(View.VISIBLE);
+                binding.hintTv.setText("Wordle is - " + answer);
+                binding.seeAnswerBtn.setVisibility(View.GONE);
+                binding.restartGameBtn.setVisibility(View.GONE);
+            });
+        }
+
+        if (gameMode.equalsIgnoreCase(classic)) {
+            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+            Map setValues = new HashMap();
+            setValues.put(wordInDB + wordId, "done");
+            databaseReference.updateChildren(setValues);
+        }
     }
 
     private void submitWord() {
+        isEnterEnabled = false;
         ArrayList<String> list = new ArrayList<>();
         currentWord = getWord();
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("GuessWords");
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    if (snapshot.hasChild(currentWord.toLowerCase())) {
-                        for (int i = 0; i < currentWord.length(); i++) {
-                            char letter = currentWord.charAt(i);
-                            String s = letter + "";
-                            list.add(s);
-                        }
-                        wordleLogic(list);
-                    } else {
-                        showToast("Not in word list");
-                    }
-                }
+        boolean isWordCorrect = sessionManager.isWordCorrect(currentWord);
+        if (isWordCorrect) {
+            for (int i = 0; i < currentWord.length(); i++) {
+                char letter = currentWord.charAt(i);
+                String s = letter + "";
+                list.add(s);
             }
+            wordleLogic(list);
+            isEnterEnabled = true;
+        } else {
+            noWordAnimation();
+        }
+    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
+    private void noWordAnimation() {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", 100f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", 100f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", 100f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", 100f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", 100f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", 100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", 100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", 100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", 100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", 100f);
             }
-        });
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+        }, 100);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", -100f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", -100f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", -100f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", -100f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", -100f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", -100f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", -100f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", -100f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", -100f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", -100f);
+            }
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+        }, 200);
+
+        handler.postDelayed(() -> {
+            ObjectAnimator animation1 = new ObjectAnimator();
+            ObjectAnimator animation2 = new ObjectAnimator();
+            ObjectAnimator animation3 = new ObjectAnimator();
+            ObjectAnimator animation4 = new ObjectAnimator();
+            ObjectAnimator animation5 = new ObjectAnimator();
+            if (row == 1) {
+                animation1 = ObjectAnimator.ofFloat(binding.row11, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row12, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row13, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row14, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row15, "translationX", 0f);
+            } else if (row == 2) {
+                animation1 = ObjectAnimator.ofFloat(binding.row21, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row22, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row23, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row24, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row25, "translationX", 0f);
+            } else if (row == 3) {
+                animation1 = ObjectAnimator.ofFloat(binding.row31, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row32, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row33, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row34, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row35, "translationX", 0f);
+            } else if (row == 4) {
+                animation1 = ObjectAnimator.ofFloat(binding.row41, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row42, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row43, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row44, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row45, "translationX", 0f);
+            } else if (row == 5) {
+                animation1 = ObjectAnimator.ofFloat(binding.row51, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row52, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row53, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row54, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row55, "translationX", 0f);
+            } else if (row == 6) {
+                animation1 = ObjectAnimator.ofFloat(binding.row61, "translationX", 0f);
+                animation2 = ObjectAnimator.ofFloat(binding.row62, "translationX", 0f);
+                animation3 = ObjectAnimator.ofFloat(binding.row63, "translationX", 0f);
+                animation4 = ObjectAnimator.ofFloat(binding.row64, "translationX", 0f);
+                animation5 = ObjectAnimator.ofFloat(binding.row65, "translationX", 0f);
+            }
+            animation1.setDuration(100);
+            animation1.start();
+            animation2.setDuration(100);
+            animation2.start();
+            animation3.setDuration(100);
+            animation3.start();
+            animation4.setDuration(100);
+            animation4.start();
+            animation5.setDuration(100);
+            animation5.start();
+            isEnterEnabled = true;
+        }, 300);
+        vibrator.vibrate(300);
+        showToastOnHeight("Not in word list");
+    }
+
+    private void showToastOnHeight(String msg) {
+        showToastOnHeight(msg, getContext(), getActivity());
     }
 
     private <T> boolean containsAny(ArrayList<T> l1, ArrayList<T> l2) {
@@ -784,6 +1549,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(0).equals(newLetter)) {
                 makeAnimation(1);
+                correctCol.set(0, true);
             } else {
                 makeHasAnimation(1);
             }
@@ -796,6 +1562,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(1).equals(newLetter)) {
                 makeAnimation(2);
+                correctCol.set(1, true);
             } else {
                 makeHasAnimation(2);
             }
@@ -808,6 +1575,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(2).equals(newLetter)) {
                 makeAnimation(3);
+                correctCol.set(2, true);
             } else {
                 makeHasAnimation(3);
             }
@@ -820,6 +1588,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(3).equals(newLetter)) {
                 makeAnimation(4);
+                correctCol.set(3, true);
             } else {
                 makeHasAnimation(4);
             }
@@ -832,6 +1601,7 @@ public class GameFragment extends BaseFragment {
 
             if (lettersList.get(4).equals(newLetter)) {
                 makeAnimation(5);
+                correctCol.set(4, true);
             } else {
                 makeHasAnimation(5);
             }
@@ -944,6 +1714,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(0).equals(newLetter)) {
                     makeAnimation(1);
+                    correctCol.set(0, true);
                 } else {
                     makeHasAnimation(1);
                 }
@@ -958,6 +1729,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(1).equals(newLetter)) {
                     makeAnimation(2);
+                    correctCol.set(1, true);
                 } else {
                     makeHasAnimation(2);
                 }
@@ -972,6 +1744,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(2).equals(newLetter)) {
                     makeAnimation(3);
+                    correctCol.set(2, true);
                 } else {
                     makeHasAnimation(3);
                 }
@@ -986,6 +1759,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(3).equals(newLetter)) {
                     makeAnimation(4);
+                    correctCol.set(3, true);
                 } else {
                     makeHasAnimation(4);
                 }
@@ -1000,6 +1774,7 @@ public class GameFragment extends BaseFragment {
 
                 if (lettersList.get(4).equals(newLetter)) {
                     makeAnimation(5);
+                    correctCol.set(4, true);
                 } else {
                     makeHasAnimation(5);
                 }
@@ -1236,6 +2011,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -1244,6 +2020,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -1252,6 +2029,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -1260,6 +2038,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -1269,6 +2048,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row15.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -1280,6 +2060,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -1288,6 +2069,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -1296,6 +2078,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -1304,6 +2087,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -1313,6 +2097,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row25.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -1324,6 +2109,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -1332,6 +2118,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -1340,6 +2127,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -1348,6 +2136,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -1358,6 +2147,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row35.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -1369,6 +2159,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -1377,6 +2168,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -1385,6 +2177,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -1393,6 +2186,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -1403,6 +2197,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row45.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -1414,6 +2209,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -1422,6 +2218,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -1430,6 +2227,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -1438,6 +2236,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -1445,9 +2244,9 @@ public class GameFragment extends BaseFragment {
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
 
-
                     binding.row55.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -1459,6 +2258,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -1467,6 +2267,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -1475,6 +2276,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -1483,27 +2285,32 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    binding.lose.setVisibility(View.VISIBLE);
-                    Handler handler1 = new Handler();
-                    handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                        } else {
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                        }
-                    }, 5000);
-
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row65.animate().alpha(1f).setDuration(250);
-                }, 250);
+                if (gameMode.equalsIgnoreCase(multi)) {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                    }, 250);
+                } else {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
+                        showLostGameViews();
+                    }, 250);
+                }
                 setDataInDB(6);
             }
         }
@@ -1518,6 +2325,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -1526,6 +2334,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -1534,6 +2343,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -1542,6 +2352,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -1552,6 +2363,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row15.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -1563,6 +2375,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -1571,6 +2384,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -1579,6 +2393,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -1587,6 +2402,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -1597,6 +2413,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row25.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -1608,6 +2425,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -1616,6 +2434,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -1624,6 +2443,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -1632,6 +2452,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -1642,6 +2463,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row35.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -1653,6 +2475,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -1661,6 +2484,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -1669,6 +2493,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -1677,6 +2502,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -1687,6 +2513,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row45.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -1698,6 +2525,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -1706,6 +2534,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -1714,6 +2543,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -1722,6 +2552,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -1732,6 +2563,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row55.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -1743,6 +2575,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -1751,6 +2584,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -1759,6 +2593,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -1767,27 +2602,32 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_has_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    binding.lose.setVisibility(View.VISIBLE);
-                    Handler handler1 = new Handler();
-                    handler1.postDelayed(() -> {
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                        } else {
-                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                        }
-                    }, 5000);
-
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row65.animate().alpha(1f).setDuration(250);
-                }, 250);
+                if (gameMode.equalsIgnoreCase(multi)) {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                    }, 250);
+                } else {
+                    Handler handler = new Handler();
+                    handler.postDelayed(() -> {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        binding.lose.setVisibility(View.VISIBLE);
+                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
+                        binding.row65.animate().alpha(1f).setDuration(250);
+                        setBoxColor(binding.row65);
+                        showLostGameViews();
+                    }, 250);
+                }
                 setDataInDB(6);
             }
         }
@@ -1836,6 +2676,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row11.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row11.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row11);
                 }, 250);
             } else if (index == 2) {
                 binding.row12.animate().alpha(0f).setDuration(250);
@@ -1844,6 +2685,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row12.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row12.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row12);
                 }, 250);
             } else if (index == 3) {
                 binding.row13.animate().alpha(0f).setDuration(250);
@@ -1852,6 +2694,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row13.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row13.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row13);
                 }, 250);
             } else if (index == 4) {
                 binding.row14.animate().alpha(0f).setDuration(250);
@@ -1860,6 +2703,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row14.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row14.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row14);
                 }, 250);
             } else if (index == 5) {
                 binding.row15.animate().alpha(0f).setDuration(250);
@@ -1869,6 +2713,7 @@ public class GameFragment extends BaseFragment {
                     index5("row1");
                     binding.row15.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row15.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row15);
                 }, 250);
                 setDataInDB(1);
             }
@@ -1880,6 +2725,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row21.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row21.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row21);
                 }, 250);
             } else if (index == 2) {
                 binding.row22.animate().alpha(0f).setDuration(250);
@@ -1888,6 +2734,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row22.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row22.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row22);
                 }, 250);
             } else if (index == 3) {
                 binding.row23.animate().alpha(0f).setDuration(250);
@@ -1896,6 +2743,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row23.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row23.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row23);
                 }, 250);
             } else if (index == 4) {
                 binding.row24.animate().alpha(0f).setDuration(250);
@@ -1904,6 +2752,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row24.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row24.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row24);
                 }, 250);
             } else if (index == 5) {
                 binding.row25.animate().alpha(0f).setDuration(250);
@@ -1913,6 +2762,7 @@ public class GameFragment extends BaseFragment {
                     index5("row2");
                     binding.row25.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row25.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row25);
                 }, 250);
                 setDataInDB(2);
             }
@@ -1924,6 +2774,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row31.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row31.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row31);
                 }, 250);
             } else if (index == 2) {
                 binding.row32.animate().alpha(0f).setDuration(250);
@@ -1932,6 +2783,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row32.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row32.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row32);
                 }, 250);
             } else if (index == 3) {
                 binding.row33.animate().alpha(0f).setDuration(250);
@@ -1940,6 +2792,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row33.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row33.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row33);
                 }, 250);
             } else if (index == 4) {
                 binding.row34.animate().alpha(0f).setDuration(250);
@@ -1948,6 +2801,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row34.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row34.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row34);
                 }, 250);
             } else if (index == 5) {
                 binding.row35.animate().alpha(0f).setDuration(250);
@@ -1957,6 +2811,7 @@ public class GameFragment extends BaseFragment {
                     index5("row3");
                     binding.row35.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row35.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row35);
                 }, 250);
                 setDataInDB(3);
             }
@@ -1968,6 +2823,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row41.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row41.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row41);
                 }, 250);
             } else if (index == 2) {
                 binding.row42.animate().alpha(0f).setDuration(250);
@@ -1976,6 +2832,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row42.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row42.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row42);
                 }, 250);
             } else if (index == 3) {
                 binding.row43.animate().alpha(0f).setDuration(250);
@@ -1984,6 +2841,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row43.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row43.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row43);
                 }, 250);
             } else if (index == 4) {
                 binding.row44.animate().alpha(0f).setDuration(250);
@@ -1992,6 +2850,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row44.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row44.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row44);
                 }, 250);
             } else if (index == 5) {
                 binding.row45.animate().alpha(0f).setDuration(250);
@@ -2001,6 +2860,7 @@ public class GameFragment extends BaseFragment {
                     index5("row4");
                     binding.row45.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row45.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row45);
                 }, 250);
                 setDataInDB(4);
             }
@@ -2012,6 +2872,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row51.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row51.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row51);
                 }, 250);
             } else if (index == 2) {
                 binding.row52.animate().alpha(0f).setDuration(250);
@@ -2020,6 +2881,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row52.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row52.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row52);
                 }, 250);
             } else if (index == 3) {
                 binding.row53.animate().alpha(0f).setDuration(250);
@@ -2028,6 +2890,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row53.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row53.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row53);
                 }, 250);
             } else if (index == 4) {
                 binding.row54.animate().alpha(0f).setDuration(250);
@@ -2036,6 +2899,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row54.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row54.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row54);
                 }, 250);
             } else if (index == 5) {
                 binding.row55.animate().alpha(0f).setDuration(250);
@@ -2045,6 +2909,7 @@ public class GameFragment extends BaseFragment {
                     index5("row5");
                     binding.row55.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row55.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row55);
                 }, 250);
                 setDataInDB(5);
             }
@@ -2056,6 +2921,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row61.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row61.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row61);
                 }, 250);
             } else if (index == 2) {
                 binding.row62.animate().alpha(0f).setDuration(250);
@@ -2064,6 +2930,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row62.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row62.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row62);
                 }, 250);
             } else if (index == 3) {
                 binding.row63.animate().alpha(0f).setDuration(250);
@@ -2072,6 +2939,7 @@ public class GameFragment extends BaseFragment {
 
                     binding.row63.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row63.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row63);
                 }, 250);
             } else if (index == 4) {
                 binding.row64.animate().alpha(0f).setDuration(250);
@@ -2080,15 +2948,17 @@ public class GameFragment extends BaseFragment {
 
                     binding.row64.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row64.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row64);
                 }, 250);
             } else if (index == 5) {
                 binding.row65.animate().alpha(0f).setDuration(250);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    index5("row6");
                     binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row65.animate().alpha(1f).setDuration(250);
+                    setBoxColor(binding.row65);
+                    index5("row6");
                 }, 250);
                 setDataInDB(6);
             }
@@ -2097,11 +2967,13 @@ public class GameFragment extends BaseFragment {
 
     private void index5(String rowLocal) {
         if (currentWord.equalsIgnoreCase(answer)) {
-            dbHandler.dropTable(gameMode);
-            sessionManager.clearGameModeSession(gameMode);
+            if (!gameMode.equalsIgnoreCase(multi)) {
+                dbHandler.dropTable(gameMode);
+                sessionManager.clearGameModeSession(gameMode);
+                binding.victory.setVisibility(View.VISIBLE);
+            }
             getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             binding.gameFragment.setEnabled(false);
-            binding.victory.setVisibility(View.VISIBLE);
             if (gameMode.equalsIgnoreCase(daily)) {
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(daily).child(currentDate);
                 Map setValues = new HashMap();
@@ -2156,6 +3028,23 @@ public class GameFragment extends BaseFragment {
 
                     }
                 });
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
+                    }
+                }, 5000);
 
             } else if (gameMode.equalsIgnoreCase(classic)) {
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
@@ -2209,111 +3098,125 @@ public class GameFragment extends BaseFragment {
 
                     }
                 });
-            }
-            Handler handler1 = new Handler();
-            handler1.postDelayed(() -> {
-                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    if (gameMode.equalsIgnoreCase(classic)) {
-                        Bundle bundle = new Bundle();
-                        bundle.putString("gameMode", classic);
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                    } else {
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                Handler handler1 = new Handler();
+                handler1.postDelayed(() -> {
+                    if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (gameMode.equalsIgnoreCase(classic)) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("gameMode", classic);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+                            }
+                        } else {
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
+                            }
+                        }
                     }
-                }
-            }, 5000);
+                }, 5000);
+            } else if (gameMode.equalsIgnoreCase(multi)) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+                Map setValues = new HashMap();
+                setValues.put("Lobby Status", "Result");
+                setValues.put("WinnerId", userId);
+                setValues.put("WinnerName", sessionManager.getStringKey(Params.KEY_USER_NAME));
+                databaseReference.updateChildren(setValues);
+            }
         }
     }
 
     private void setDataInDB(Integer row) {
-        if (gameMode.equalsIgnoreCase(classic)) {
-            sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, true);
-        } else {
-            sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, true);
+        if (!gameMode.equalsIgnoreCase(multi)) {
+            if (gameMode.equalsIgnoreCase(classic)) {
+                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, true);
+            } else {
+                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, true);
+            }
+            String letter1 = "", letter2 = "", letter3 = "", letter4 = "", letter5 = "";
+
+            if (row == 1) {
+                letter1 = binding.row11.getText().toString().toUpperCase().trim();
+                letter2 = binding.row12.getText().toString().toUpperCase().trim();
+                letter3 = binding.row13.getText().toString().toUpperCase().trim();
+                letter4 = binding.row14.getText().toString().toUpperCase().trim();
+                letter5 = binding.row15.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "1");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "1");
+                }
+            } else if (row == 2) {
+                letter1 = binding.row21.getText().toString().toUpperCase().trim();
+                letter2 = binding.row22.getText().toString().toUpperCase().trim();
+                letter3 = binding.row23.getText().toString().toUpperCase().trim();
+                letter4 = binding.row24.getText().toString().toUpperCase().trim();
+                letter5 = binding.row25.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "2");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "2");
+                }
+            } else if (row == 3) {
+                letter1 = binding.row31.getText().toString().toUpperCase().trim();
+                letter2 = binding.row32.getText().toString().toUpperCase().trim();
+                letter3 = binding.row33.getText().toString().toUpperCase().trim();
+                letter4 = binding.row34.getText().toString().toUpperCase().trim();
+                letter5 = binding.row35.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "3");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "3");
+                }
+            } else if (row == 4) {
+                letter1 = binding.row41.getText().toString().toUpperCase().trim();
+                letter2 = binding.row42.getText().toString().toUpperCase().trim();
+                letter3 = binding.row43.getText().toString().toUpperCase().trim();
+                letter4 = binding.row44.getText().toString().toUpperCase().trim();
+                letter5 = binding.row45.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "4");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "4");
+                }
+            } else if (row == 5) {
+                letter1 = binding.row51.getText().toString().toUpperCase().trim();
+                letter2 = binding.row52.getText().toString().toUpperCase().trim();
+                letter3 = binding.row53.getText().toString().toUpperCase().trim();
+                letter4 = binding.row54.getText().toString().toUpperCase().trim();
+                letter5 = binding.row55.getText().toString().toUpperCase().trim();
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "5");
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "5");
+                }
+            } else if (row == 6) {
+                letter1 = binding.row61.getText().toString().toUpperCase().trim();
+                letter2 = binding.row62.getText().toString().toUpperCase().trim();
+                letter3 = binding.row63.getText().toString().toUpperCase().trim();
+                letter4 = binding.row64.getText().toString().toUpperCase().trim();
+                letter5 = binding.row65.getText().toString().toUpperCase().trim();
+
+                if (gameMode.equalsIgnoreCase(classic)) {
+                    sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "6");
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
+                } else {
+                    sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "6");
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
+                }
+                dbHandler.dropTable(gameMode);
+            }
+            if (gameMode.equalsIgnoreCase(classic)) {
+                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
+            } else {
+                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
+                sessionManager.addStringKey(Params.KEY_LAST_DAILY_DATE, currentDate);
+            }
+
+            sessionManager.addStringKey(Params.KEY_LAST_GAME_MODE, gameMode);
+
+            dbHandler.addRow(row, letter1, letter2, letter3, letter4, letter5, gameMode);
         }
-        String letter1 = "", letter2 = "", letter3 = "", letter4 = "", letter5 = "";
-
-        if (row == 1) {
-            letter1 = binding.row11.getText().toString().toUpperCase().trim();
-            letter2 = binding.row12.getText().toString().toUpperCase().trim();
-            letter3 = binding.row13.getText().toString().toUpperCase().trim();
-            letter4 = binding.row14.getText().toString().toUpperCase().trim();
-            letter5 = binding.row15.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "1");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "1");
-            }
-        } else if (row == 2) {
-            letter1 = binding.row21.getText().toString().toUpperCase().trim();
-            letter2 = binding.row22.getText().toString().toUpperCase().trim();
-            letter3 = binding.row23.getText().toString().toUpperCase().trim();
-            letter4 = binding.row24.getText().toString().toUpperCase().trim();
-            letter5 = binding.row25.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "2");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "2");
-            }
-        } else if (row == 3) {
-            letter1 = binding.row31.getText().toString().toUpperCase().trim();
-            letter2 = binding.row32.getText().toString().toUpperCase().trim();
-            letter3 = binding.row33.getText().toString().toUpperCase().trim();
-            letter4 = binding.row34.getText().toString().toUpperCase().trim();
-            letter5 = binding.row35.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "3");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "3");
-            }
-        } else if (row == 4) {
-            letter1 = binding.row41.getText().toString().toUpperCase().trim();
-            letter2 = binding.row42.getText().toString().toUpperCase().trim();
-            letter3 = binding.row43.getText().toString().toUpperCase().trim();
-            letter4 = binding.row44.getText().toString().toUpperCase().trim();
-            letter5 = binding.row45.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "4");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "4");
-            }
-        } else if (row == 5) {
-            letter1 = binding.row51.getText().toString().toUpperCase().trim();
-            letter2 = binding.row52.getText().toString().toUpperCase().trim();
-            letter3 = binding.row53.getText().toString().toUpperCase().trim();
-            letter4 = binding.row54.getText().toString().toUpperCase().trim();
-            letter5 = binding.row55.getText().toString().toUpperCase().trim();
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "5");
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "5");
-            }
-        } else if (row == 6) {
-            letter1 = binding.row61.getText().toString().toUpperCase().trim();
-            letter2 = binding.row62.getText().toString().toUpperCase().trim();
-            letter3 = binding.row63.getText().toString().toUpperCase().trim();
-            letter4 = binding.row64.getText().toString().toUpperCase().trim();
-            letter5 = binding.row65.getText().toString().toUpperCase().trim();
-
-            if (gameMode.equalsIgnoreCase(classic)) {
-                sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ROW, "6");
-                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_CLASSIC_GAME, false);
-            } else {
-                sessionManager.addStringKey(Params.KEY_LAST_DAILY_ROW, "6");
-                sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
-            }
-            dbHandler.dropTable(gameMode);
-        }
-        if (gameMode.equalsIgnoreCase(classic)) {
-            sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
-        } else {
-            sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
-        }
-
-        sessionManager.addStringKey(Params.KEY_LAST_GAME_MODE, gameMode);
-
-        dbHandler.addRow(row, letter1, letter2, letter3, letter4, letter5, gameMode);
     }
 
     private void removeCharInView() {
@@ -2396,6 +3299,20 @@ public class GameFragment extends BaseFragment {
             } else {
                 return;
             }
+        } else if (row == 6) {
+            if (current == 1) {
+                binding.row61.setText("");
+            } else if (current == 2) {
+                binding.row62.setText("");
+            } else if (current == 3) {
+                binding.row63.setText("");
+            } else if (current == 4) {
+                binding.row64.setText("");
+            } else if (current == 5) {
+                binding.row65.setText("");
+            } else {
+                return;
+            }
         }
     }
 
@@ -2403,14 +3320,29 @@ public class GameFragment extends BaseFragment {
         if (row == 1) {
             if (current == 1) {
                 binding.row11.setText(alphabet);
+                binding.row11.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row11.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row12.setText(alphabet);
+                binding.row12.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row12.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row13.setText(alphabet);
+                binding.row13.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row13.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row14.setText(alphabet);
+                binding.row14.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row14.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row15.setText(alphabet);
+                binding.row15.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row15.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -2418,14 +3350,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 2) {
             if (current == 1) {
                 binding.row21.setText(alphabet);
+                binding.row21.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row21.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row22.setText(alphabet);
+                binding.row22.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row22.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row23.setText(alphabet);
+                binding.row23.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row23.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row24.setText(alphabet);
+                binding.row24.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row24.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row25.setText(alphabet);
+                binding.row25.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row25.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -2433,14 +3380,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 3) {
             if (current == 1) {
                 binding.row31.setText(alphabet);
+                binding.row31.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row31.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row32.setText(alphabet);
+                binding.row32.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row32.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row33.setText(alphabet);
+                binding.row33.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row33.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row34.setText(alphabet);
+                binding.row34.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row34.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row35.setText(alphabet);
+                binding.row35.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row35.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -2448,14 +3410,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 4) {
             if (current == 1) {
                 binding.row41.setText(alphabet);
+                binding.row41.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row41.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row42.setText(alphabet);
+                binding.row42.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row42.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row43.setText(alphabet);
+                binding.row43.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row43.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row44.setText(alphabet);
+                binding.row44.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row44.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row45.setText(alphabet);
+                binding.row45.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row45.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -2463,14 +3440,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 5) {
             if (current == 1) {
                 binding.row51.setText(alphabet);
+                binding.row51.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row51.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row52.setText(alphabet);
+                binding.row52.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row52.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row53.setText(alphabet);
+                binding.row53.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row53.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row54.setText(alphabet);
+                binding.row54.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row54.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row55.setText(alphabet);
+                binding.row55.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row55.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -2478,14 +3470,29 @@ public class GameFragment extends BaseFragment {
         } else if (row == 6) {
             if (current == 1) {
                 binding.row61.setText(alphabet);
+                binding.row61.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row61.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row62.setText(alphabet);
+                binding.row62.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row62.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row63.setText(alphabet);
+                binding.row63.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row63.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row64.setText(alphabet);
+                binding.row64.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row64.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row65.setText(alphabet);
+                binding.row65.startAnimation(scaleUp);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.row65.startAnimation(scaleDown), 120);
             } else {
                 return;
             }

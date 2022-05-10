@@ -5,14 +5,13 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
+    <color name="black">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="no_bg_txt">#FFFFFFFF</color>
-    <color name="mainbg">#FF000000</color>
+    <color name="no_bg_txt">#000000</color>
+    <color name="mainbg">#FFFFFFFF</color>
     <color name="main_second">#3A3A3C</color>
     <color name="stroke_color">#707070</color>
-    <color name="correct_color">#538D4E</color>
-    <color name="has_color">#B59F3B</color>
+    <color name="correct_color">#6AAA64</color>
+    <color name="has_color">#C9B458</color>
     <color name="keyboard_button">#818384</color>
-
 </resources>

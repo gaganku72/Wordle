@@ -28,8 +28,12 @@ public class Params {
     public static final String KEY_LAST_DAILY_ROW = "dailyLastRow";
     public static final String KEY_LAST_CLASSIC_ANSWER = "classicLastAnswer";
     public static final String KEY_LAST_DAILY_ANSWER = "dailyLastAnswer";
+    public static final String KEY_LAST_DAILY_DATE = "dailyLastDate";
     public static final String KEY_LAST_GAME_MODE = "lastGameMode";
 
     public static final String CLASSIC_GAME_MODE = "classic";
     public static final String DAILY_GAME_MODE = "daily";
+    public static final String MULTI_GAME_MODE = "multiplayer";
+    public static final String GUESS_WORD_LIST = "guessWordList";
+    public static final String GUESS_WORD_LIST_ADDED = "isGuessWordListAdded";
 }

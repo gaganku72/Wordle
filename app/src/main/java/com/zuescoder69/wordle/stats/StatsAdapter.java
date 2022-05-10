@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.zuescoder69.wordle.menu_fragment;
+import com.zuescoder69.wordle.MenuFragment;
 
 /**
  * Created by Gagan Kumar on 22/03/22.
@@ -25,7 +25,7 @@ public class StatsAdapter extends FragmentStateAdapter {
             case 2:
                 return new ClassicStatsFragment();
         }
-        return new menu_fragment();
+        return new MenuFragment();
     }
 
     @Override
