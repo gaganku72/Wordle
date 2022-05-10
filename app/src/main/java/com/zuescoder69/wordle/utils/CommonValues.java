@@ -10,9 +10,9 @@ import java.util.ArrayList;
 public class CommonValues {
     public static String versionCode = "3";
     public static String versionCodeFirebase = "3";
-    public static String rewardAdId = "ca-app-pub-3940256099942544/5224354917";
-    public static String interNormalId = "ca-app-pub-2645963896743153/9833622836";
-    public static String interVideoId = "ca-app-pub-3940256099942544/1033173712";
+    public static String rewardAdId = "ca-app-pub-2645963896743153/2080195209";
+    public static String interNormalId = "";
+    public static String interVideoId = "ca-app-pub-2645963896743153/7524093574";
     public static String currentFragment = "";
     public static boolean isShowAd = false;
     public static boolean isAdFree = false;

@@ -173,12 +173,18 @@ public class LoginFragment extends BaseFragment {
                                 setValues.put("NewUser", "Yes");
                                 databaseReference.setValue(setValues);
 
+                                new Handler().postDelayed(() -> {
+                                    binding.progressBar.setVisibility(View.GONE);
+                                    showToast("Welcome " + userName);
+                                    navCo.navigate(R.id.action_loginFragment_to_onBoardingFragment);
+                                }, 2000);
+                            } else {
+                                new Handler().postDelayed(() -> {
+                                    binding.progressBar.setVisibility(View.GONE);
+                                    showToast("Welcome " + userName);
+                                    navCo.navigate(R.id.action_loginFragment_to_menu_fragment);
+                                }, 2000);
                             }
-                            new Handler().postDelayed(() -> {
-                                binding.progressBar.setVisibility(View.GONE);
-                                showToast("Welcome " + userName);
-                                navCo.navigate(R.id.action_loginFragment_to_menu_fragment);
-                            }, 2000);
 
                         } else {
                             Log.d("LoginFragment", "UnSuccessfull");

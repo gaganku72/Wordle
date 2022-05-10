@@ -8,9 +8,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -143,12 +141,12 @@ public class GameFragment extends BaseFragment {
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
         Handler handler = new Handler();
         handler.postDelayed(() -> {
+            getCurrentDate();
             if (!gameMode.equalsIgnoreCase(multi)) {
                 getPreviousGameData();
             } else {
                 getMultiplayerGameData();
             }
-            getCurrentDate();
             setupOnClicks();
             getAppData();
         }, 300);
@@ -319,8 +317,12 @@ public class GameFragment extends BaseFragment {
                         String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
                         if (userId.contains(currentUserId)) {
                             CommonValues.isShowAd = false;
+                            CommonValues.isAdFree = true;
                             binding.progress.setVisibility(View.GONE);
                             binding.gameFragment.setVisibility(View.VISIBLE);
+                            if (!gameLost) {
+                                binding.helpBtn.setVisibility(View.VISIBLE);
+                            }
                         } else {
                             CommonValues.isShowAd = true;
                             loadAd();
@@ -451,6 +453,14 @@ public class GameFragment extends BaseFragment {
                 lastRow = Integer.parseInt(lastRowString);
             } else {
                 answer = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ANSWER);
+                Log.d(TAG, "getPreviousGameData Answer: " + answer);
+                String lastDate = sessionManager.getStringKey(Params.KEY_LAST_DAILY_DATE);
+                if (!lastDate.equalsIgnoreCase(currentDate)) {
+                    sessionManager.addBooleanKey(Params.KEY_IS_PREVIOUS_DAILY_GAME, false);
+                    getAnswer();
+                    dbHandler.dropTable(gameMode);
+                    return;
+                }
                 String lastRowString = sessionManager.getStringKey(Params.KEY_LAST_DAILY_ROW);
                 lastRow = Integer.parseInt(lastRowString);
             }
@@ -994,7 +1004,7 @@ public class GameFragment extends BaseFragment {
                 vibrator.vibrate(vibrationTime);
                 if (isEnterEnabled) {
                     if (current == 6) {
-                        if (row < 7) {
+                        if (row < 7 && row > 2) {
                             if (mInterstitialAd != null && !isAdFree) {
                                 mInterstitialAd.show(getActivity());
                                 loadAd();
@@ -1024,6 +1034,8 @@ public class GameFragment extends BaseFragment {
                             } else {
                                 submitWord();
                             }
+                        } else {
+                            submitWord();
                         }
                     }
                 }
@@ -1056,10 +1068,19 @@ public class GameFragment extends BaseFragment {
     }
 
     private void showHint() {
-        if (CommonValues.mRewardedAd != null) {
+        if (CommonValues.isAdFree) {
+            for (int i = 0; i < correctCol.size(); i++) {
+                if (!correctCol.get(i)) {
+                    binding.hintTv.setVisibility(View.VISIBLE);
+                    String hint = answer.charAt(i) + "";
+                    binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    break;
+                }
+            }
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-//                CommonValues.mRewardedAd = null;
-//                loadRewardedAd();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
                 for (int i = 0; i < correctCol.size(); i++) {
                     if (!correctCol.get(i)) {
                         binding.hintTv.setVisibility(View.VISIBLE);
@@ -1074,9 +1095,9 @@ public class GameFragment extends BaseFragment {
 
     @SuppressLint("ClickableViewAccessibility")
     private void showLostGameViews() {
-        if (CommonValues.isShowAd) {
+        if (CommonValues.isShowAd || CommonValues.isAdFree) {
             gameLost = true;
-            if (CommonValues.mRewardedAd != null) {
+            if (CommonValues.mRewardedAd != null || CommonValues.isAdFree) {
                 binding.helpBtn.setVisibility(View.INVISIBLE);
                 binding.nextGameBtn.setVisibility(View.VISIBLE);
                 binding.seeAnswerBtn.setVisibility(View.VISIBLE);
@@ -1141,10 +1162,12 @@ public class GameFragment extends BaseFragment {
     }
 
     private void restartGame() {
-        if (CommonValues.mRewardedAd != null) {
+        if (CommonValues.isAdFree) {
+            removeAllCharFromViews();
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-//                CommonValues.mRewardedAd = null;
-//                loadRewardedAd();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
                 removeAllCharFromViews();
             });
         }
@@ -1234,14 +1257,27 @@ public class GameFragment extends BaseFragment {
     }
 
     private void seeAnswer() {
-        if (CommonValues.mRewardedAd != null) {
+        if (CommonValues.isAdFree) {
+            binding.hintTv.setVisibility(View.VISIBLE);
+            binding.hintTv.setText("Wordle is - " + answer);
+            binding.restartGameBtn.setVisibility(View.GONE);
+            binding.seeAnswerBtn.setVisibility(View.GONE);
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
-//                CommonValues.mRewardedAd = null;
-//                loadRewardedAd();
+                CommonValues.mRewardedAd = null;
+                loadRewardedAd();
                 binding.hintTv.setVisibility(View.VISIBLE);
                 binding.hintTv.setText("Wordle is - " + answer);
+                binding.seeAnswerBtn.setVisibility(View.GONE);
                 binding.restartGameBtn.setVisibility(View.GONE);
             });
+        }
+
+        if (gameMode.equalsIgnoreCase(classic)) {
+            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+            Map setValues = new HashMap();
+            setValues.put(wordInDB + wordId, "done");
+            databaseReference.updateChildren(setValues);
         }
     }
 
@@ -1258,8 +1294,7 @@ public class GameFragment extends BaseFragment {
             }
             wordleLogic(list);
             isEnterEnabled = true;
-        }
-        else {
+        } else {
             noWordAnimation();
         }
     }
@@ -1432,7 +1467,11 @@ public class GameFragment extends BaseFragment {
             isEnterEnabled = true;
         }, 300);
         vibrator.vibrate(300);
-        showToast("Not in word list");
+        showToastOnHeight("Not in word list");
+    }
+
+    private void showToastOnHeight(String msg) {
+        showToastOnHeight(msg, getContext(), getActivity());
     }
 
     private <T> boolean containsAny(ArrayList<T> l1, ArrayList<T> l2) {
@@ -2916,10 +2955,10 @@ public class GameFragment extends BaseFragment {
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    index5("row6");
                     binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     binding.row65.animate().alpha(1f).setDuration(250);
                     setBoxColor(binding.row65);
+                    index5("row6");
                 }, 250);
                 setDataInDB(6);
             }
@@ -3171,6 +3210,7 @@ public class GameFragment extends BaseFragment {
                 sessionManager.addStringKey(Params.KEY_LAST_CLASSIC_ANSWER, answer);
             } else {
                 sessionManager.addStringKey(Params.KEY_LAST_DAILY_ANSWER, answer);
+                sessionManager.addStringKey(Params.KEY_LAST_DAILY_DATE, currentDate);
             }
 
             sessionManager.addStringKey(Params.KEY_LAST_GAME_MODE, gameMode);
@@ -3282,27 +3322,27 @@ public class GameFragment extends BaseFragment {
                 binding.row11.setText(alphabet);
                 binding.row11.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row11.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row11.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row12.setText(alphabet);
                 binding.row12.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row12.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row12.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row13.setText(alphabet);
                 binding.row13.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row13.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row13.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row14.setText(alphabet);
                 binding.row14.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row14.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row14.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row15.setText(alphabet);
                 binding.row15.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row15.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row15.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -3312,27 +3352,27 @@ public class GameFragment extends BaseFragment {
                 binding.row21.setText(alphabet);
                 binding.row21.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row21.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row21.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row22.setText(alphabet);
                 binding.row22.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row22.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row22.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row23.setText(alphabet);
                 binding.row23.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row23.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row23.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row24.setText(alphabet);
                 binding.row24.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row24.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row24.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row25.setText(alphabet);
                 binding.row25.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row25.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row25.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -3342,27 +3382,27 @@ public class GameFragment extends BaseFragment {
                 binding.row31.setText(alphabet);
                 binding.row31.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row31.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row31.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row32.setText(alphabet);
                 binding.row32.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row32.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row32.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row33.setText(alphabet);
                 binding.row33.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row33.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row33.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row34.setText(alphabet);
                 binding.row34.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row34.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row34.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row35.setText(alphabet);
                 binding.row35.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row35.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row35.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -3372,27 +3412,27 @@ public class GameFragment extends BaseFragment {
                 binding.row41.setText(alphabet);
                 binding.row41.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row41.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row41.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row42.setText(alphabet);
                 binding.row42.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row42.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row42.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row43.setText(alphabet);
                 binding.row43.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row43.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row43.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row44.setText(alphabet);
                 binding.row44.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row44.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row44.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row45.setText(alphabet);
                 binding.row45.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row45.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row45.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -3402,27 +3442,27 @@ public class GameFragment extends BaseFragment {
                 binding.row51.setText(alphabet);
                 binding.row51.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row51.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row51.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row52.setText(alphabet);
                 binding.row52.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row52.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row52.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row53.setText(alphabet);
                 binding.row53.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row53.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row53.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row54.setText(alphabet);
                 binding.row54.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row54.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row54.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row55.setText(alphabet);
                 binding.row55.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row55.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row55.startAnimation(scaleDown), 120);
             } else {
                 return;
             }
@@ -3432,27 +3472,27 @@ public class GameFragment extends BaseFragment {
                 binding.row61.setText(alphabet);
                 binding.row61.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row61.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row61.startAnimation(scaleDown), 120);
             } else if (current == 2) {
                 binding.row62.setText(alphabet);
                 binding.row62.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row62.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row62.startAnimation(scaleDown), 120);
             } else if (current == 3) {
                 binding.row63.setText(alphabet);
                 binding.row63.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row63.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row63.startAnimation(scaleDown), 120);
             } else if (current == 4) {
                 binding.row64.setText(alphabet);
                 binding.row64.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row64.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row64.startAnimation(scaleDown), 120);
             } else if (current == 5) {
                 binding.row65.setText(alphabet);
                 binding.row65.startAnimation(scaleUp);
                 Handler handler = new Handler();
-                handler.postDelayed(() -> binding.row65.startAnimation(scaleDown),120);
+                handler.postDelayed(() -> binding.row65.startAnimation(scaleDown), 120);
             } else {
                 return;
             }

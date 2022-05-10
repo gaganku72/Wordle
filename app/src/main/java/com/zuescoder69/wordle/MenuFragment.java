@@ -344,6 +344,20 @@ public class MenuFragment extends BaseFragment {
             return true;
         });
 
+        binding.helpBtn.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                binding.helpBtn.startAnimation(scaleUp);
+                if (!isForceUpdate) {
+                    Navigation.findNavController(getView()).navigate(R.id.action_menu_fragment_to_onBoardingFragment);
+                } else {
+                    forceUpdate();
+                }
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                binding.helpBtn.startAnimation(scaleDown);
+            }
+            return true;
+        });
+
         binding.videoAd.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.videoAd.startAnimation(scaleUp);
