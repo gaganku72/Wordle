@@ -243,6 +243,8 @@ public class RoomFragment extends BaseFragment {
                                                                     setValues.put("WinnerId", "");
                                                                     setValues.put("WordId", wordId);
                                                                     setValues.put("WinnerName", "");
+                                                                    setValues.put("UserRestartStatus1", "No");
+                                                                    setValues.put("UserRestartStatus2", "No");
                                                                     databaseReference.setValue(setValues);
                                                                     CommonValues.roomIds.add(newRoomId);
                                                                     RoomFragmentDirections.ActionRoomFragmentToLobbyFragment action = RoomFragmentDirections.actionRoomFragmentToLobbyFragment(newRoomId);

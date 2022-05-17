@@ -109,7 +109,7 @@ public class LobbyFragment extends BaseFragment {
         String shareLink = "https://wordl.page.link/?" +
                 "link=https://play.google.com/store/apps/details?id=com.zuescoder69.wordle/roomId-" + roomId +
                 "&apn=" + getContext().getPackageName() +
-                "&st=" + "Wordle" +
+                "&st=" + "Wordly" +
                 "&sd=" + "Join the room and let's play." +
                 "&si=" + "https://firebasestorage.googleapis.com/v0/b/name-place-animal-thing-b8644.appspot.com/o/icon.png?alt=media&token=85ac5cda-7e13-439b-9106-713430e0d5c3";
 
@@ -179,12 +179,14 @@ public class LobbyFragment extends BaseFragment {
     }
 
     private void checkLobbyStatus() {
-        if (lobbyStatus.equalsIgnoreCase("In-Game")) {
-            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
-                Bundle bundle = new Bundle();
-                bundle.putString("gameMode", Params.MULTI_GAME_MODE);
-                if (getView() != null) {
-                    Navigation.findNavController(getView()).navigate(R.id.action_lobbyFragment_to_gameFragment, bundle);
+        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
+            if (lobbyStatus.equalsIgnoreCase("In-Game")) {
+                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("gameMode", Params.MULTI_GAME_MODE);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_lobbyFragment_to_gameFragment, bundle);
+                    }
                 }
             }
         }

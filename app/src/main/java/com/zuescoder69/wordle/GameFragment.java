@@ -243,45 +243,60 @@ public class GameFragment extends BaseFragment {
     }
 
     private void checkLobbyStatus() {
-        if (lobbyStatus.equalsIgnoreCase("Result")) {
-            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
-            Map setValues = new HashMap();
-            setValues.put(wordInDB + wordId, "done");
-            databaseReference.updateChildren(setValues);
+        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+            if (lobbyStatus.equalsIgnoreCase("Result")) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+                Map setValues = new HashMap();
+                setValues.put(wordInDB + wordId, "done");
+                databaseReference.updateChildren(setValues);
 
-            if (!TextUtils.isEmpty(winnerId)) {
-                if (userId.equalsIgnoreCase(winnerId)) {
-                    binding.victory.setVisibility(View.VISIBLE);
-                } else {
-                    binding.lose.setVisibility(View.VISIBLE);
-                }
-            }
-
-            Handler handler1 = new Handler();
-            handler1.postDelayed(() -> {
-                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("winnerName", winnerName);
-                    if (getView() != null) {
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                if (!TextUtils.isEmpty(winnerId)) {
+                    if (userId.equalsIgnoreCase(winnerId)) {
+                        binding.victory.setVisibility(View.VISIBLE);
+                    } else {
+                        binding.lose.setVisibility(View.VISIBLE);
                     }
                 }
-            }, 5000);
-        } else {
-            if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+
                 Handler handler1 = new Handler();
                 handler1.postDelayed(() -> {
                     if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (getActivity()!= null) {
+                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        }
                         Bundle bundle = new Bundle();
-                        bundle.putString("winnerName", "lost");
+                        bundle.putString("winnerName", winnerName);
                         bundle.putString("answer", answer);
+                        bundle.putString("roomId", roomId);
+                        bundle.putString("winnerId", winnerId);
+                        bundle.putString("userId1", userId1);
+                        bundle.putString("userId2", userId2);
                         if (getView() != null) {
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
                         }
                     }
                 }, 5000);
+            } else {
+                if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+                    Handler handler1 = new Handler();
+                    handler1.postDelayed(() -> {
+                        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                            if (getActivity()!= null) {
+                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                            }
+                            Bundle bundle = new Bundle();
+                            bundle.putString("winnerName", "lost");
+                            bundle.putString("answer", answer);
+                            bundle.putString("roomId", roomId);
+                            bundle.putString("winnerId", winnerId);
+                            bundle.putString("userId1", userId1);
+                            bundle.putString("userId2", userId2);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                            }
+                        }
+                    }, 5000);
+                }
             }
         }
     }
@@ -327,7 +342,6 @@ public class GameFragment extends BaseFragment {
                             CommonValues.isShowAd = true;
                             loadAd();
                             loadRewardedAd();
-                            setRewardedCallbacks();
                         }
                     } else {
                         CommonValues.isShowAd = false;
@@ -382,6 +396,7 @@ public class GameFragment extends BaseFragment {
                             @Override
                             public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
                                 CommonValues.mRewardedAd = rewardedAd;
+                                setRewardedCallbacks();
                                 binding.progressBar.setVisibility(View.GONE);
                                 binding.gameFragment.setVisibility(View.VISIBLE);
                                 if (!gameLost) {
@@ -390,6 +405,7 @@ public class GameFragment extends BaseFragment {
                             }
                         });
             } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+                setRewardedCallbacks();
                 binding.progressBar.setVisibility(View.GONE);
                 binding.gameFragment.setVisibility(View.VISIBLE);
                 if (!gameLost) {
@@ -1259,7 +1275,7 @@ public class GameFragment extends BaseFragment {
     private void seeAnswer() {
         if (CommonValues.isAdFree) {
             binding.hintTv.setVisibility(View.VISIBLE);
-            binding.hintTv.setText("Wordle is - " + answer);
+            binding.hintTv.setText("Wordly is - " + answer);
             binding.restartGameBtn.setVisibility(View.GONE);
             binding.seeAnswerBtn.setVisibility(View.GONE);
         } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
@@ -1267,7 +1283,7 @@ public class GameFragment extends BaseFragment {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
                 binding.hintTv.setVisibility(View.VISIBLE);
-                binding.hintTv.setText("Wordle is - " + answer);
+                binding.hintTv.setText("Wordly is - " + answer);
                 binding.seeAnswerBtn.setVisibility(View.GONE);
                 binding.restartGameBtn.setVisibility(View.GONE);
             });
@@ -1589,6 +1605,7 @@ public class GameFragment extends BaseFragment {
             if (lettersList.get(3).equals(newLetter)) {
                 makeAnimation(4);
                 correctCol.set(3, true);
+
             } else {
                 makeHasAnimation(4);
             }
