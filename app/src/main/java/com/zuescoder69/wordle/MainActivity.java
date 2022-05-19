@@ -14,6 +14,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
+import com.zuescoder69.wordle.utils.CommonValues;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,5 +55,12 @@ public class MainActivity extends AppCompatActivity {
                     // ...
                 })
                 .addOnFailureListener(this, e -> Log.w("DEMON", "getDynamicLink:onFailure", e));
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d("DEMON", "onPause()");
+        CommonValues.currentFragment = "none";
     }
 }

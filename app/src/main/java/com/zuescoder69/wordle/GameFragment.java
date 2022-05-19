@@ -89,6 +89,8 @@ public class GameFragment extends BaseFragment {
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
+    private DatabaseReference databaseReferenceRealTime;
+    private ValueEventListener valueEventListener;
     private Vibrator vibrator;
     private InterstitialAd mInterstitialAd;
 
@@ -214,11 +216,11 @@ public class GameFragment extends BaseFragment {
 
     private void getMultiplayerGameData() {
         roomId = CommonValues.roomId;
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        databaseReferenceRealTime = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists() && CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
@@ -239,7 +241,14 @@ public class GameFragment extends BaseFragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        databaseReferenceRealTime.addValueEventListener(valueEventListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        databaseReferenceRealTime.removeEventListener(valueEventListener);
     }
 
     private void checkLobbyStatus() {
@@ -261,7 +270,7 @@ public class GameFragment extends BaseFragment {
                 Handler handler1 = new Handler();
                 handler1.postDelayed(() -> {
                     if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                        if (getActivity()!= null) {
+                        if (getActivity() != null) {
                             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         }
                         Bundle bundle = new Bundle();
@@ -281,7 +290,7 @@ public class GameFragment extends BaseFragment {
                     Handler handler1 = new Handler();
                     handler1.postDelayed(() -> {
                         if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                            if (getActivity()!= null) {
+                            if (getActivity() != null) {
                                 getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                             }
                             Bundle bundle = new Bundle();
@@ -416,41 +425,43 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setRewardedCallbacks() {
-        CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-            @Override
-            public void onAdClicked() {
-                super.onAdClicked();
-            }
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                }
 
-            @Override
-            public void onAdDismissedFullScreenContent() {
-                super.onAdDismissedFullScreenContent();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    super.onAdDismissedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
 
-            @Override
-            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
-                super.onAdFailedToShowFullScreenContent(adError);
-            }
+                @Override
+                public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                    super.onAdFailedToShowFullScreenContent(adError);
+                }
 
-            @Override
-            public void onAdImpression() {
-                super.onAdImpression();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
+                @Override
+                public void onAdImpression() {
+                    super.onAdImpression();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
 
-            @Override
-            public void onAdShowedFullScreenContent() {
-                super.onAdShowedFullScreenContent();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
-        });
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    super.onAdShowedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
+            });
+        }
     }
 
     private void getPreviousGameData() {
@@ -1088,8 +1099,10 @@ public class GameFragment extends BaseFragment {
             for (int i = 0; i < correctCol.size(); i++) {
                 if (!correctCol.get(i)) {
                     binding.hintTv.setVisibility(View.VISIBLE);
-                    String hint = answer.charAt(i) + "";
-                    binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    if (answer.length() > i) {
+                        String hint = answer.charAt(i) + "";
+                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    }
                     break;
                 }
             }
@@ -1100,8 +1113,10 @@ public class GameFragment extends BaseFragment {
                 for (int i = 0; i < correctCol.size(); i++) {
                     if (!correctCol.get(i)) {
                         binding.hintTv.setVisibility(View.VISIBLE);
-                        String hint = answer.charAt(i) + "";
-                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        if (answer.length() > i) {
+                            String hint = answer.charAt(i) + "";
+                            binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        }
                         break;
                     }
                 }
@@ -1672,9 +1687,11 @@ public class GameFragment extends BaseFragment {
             ArrayList<Integer> indexes = new ArrayList<>();
             ArrayList<Integer> actualIndexes = new ArrayList<>();
             for (int j = lettersList.size() - 1; j >= 0; j--) {
-                if (lettersList.get(i).equalsIgnoreCase(answer.charAt(j) + "")) {
-                    count++;
-                    actualIndexes.add(j);
+                if (answer.length() > j) {
+                    if (lettersList.get(i).equalsIgnoreCase(answer.charAt(j) + "")) {
+                        count++;
+                        actualIndexes.add(j);
+                    }
                 }
             }
             for (int j = lettersList.size() - 1; j >= 0; j--) {
@@ -1727,13 +1744,15 @@ public class GameFragment extends BaseFragment {
         Handler handler = new Handler();
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(0))) {
-                String newLetter = answer.charAt(0) + "";
+                if (answer.length() > 0) {
+                    String newLetter = answer.charAt(0) + "";
 
-                if (lettersList.get(0).equals(newLetter)) {
-                    makeAnimation(1);
-                    correctCol.set(0, true);
-                } else {
-                    makeHasAnimation(1);
+                    if (lettersList.get(0).equals(newLetter)) {
+                        makeAnimation(1);
+                        correctCol.set(0, true);
+                    } else {
+                        makeHasAnimation(1);
+                    }
                 }
             } else {
                 makeWrongAnimation(1);
@@ -1742,13 +1761,15 @@ public class GameFragment extends BaseFragment {
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(1))) {
-                String newLetter = answer.charAt(1) + "";
+                if (answer.length() > 1) {
+                    String newLetter = answer.charAt(1) + "";
 
-                if (lettersList.get(1).equals(newLetter)) {
-                    makeAnimation(2);
-                    correctCol.set(1, true);
-                } else {
-                    makeHasAnimation(2);
+                    if (lettersList.get(1).equals(newLetter)) {
+                        makeAnimation(2);
+                        correctCol.set(1, true);
+                    } else {
+                        makeHasAnimation(2);
+                    }
                 }
             } else {
                 makeWrongAnimation(2);
@@ -1757,13 +1778,15 @@ public class GameFragment extends BaseFragment {
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(2))) {
-                String newLetter = answer.charAt(2) + "";
+                if (answer.length() > 2) {
+                    String newLetter = answer.charAt(2) + "";
 
-                if (lettersList.get(2).equals(newLetter)) {
-                    makeAnimation(3);
-                    correctCol.set(2, true);
-                } else {
-                    makeHasAnimation(3);
+                    if (lettersList.get(2).equals(newLetter)) {
+                        makeAnimation(3);
+                        correctCol.set(2, true);
+                    } else {
+                        makeHasAnimation(3);
+                    }
                 }
             } else {
                 makeWrongAnimation(3);
@@ -1772,13 +1795,15 @@ public class GameFragment extends BaseFragment {
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(3))) {
-                String newLetter = answer.charAt(3) + "";
+                if (answer.length() > 3) {
+                    String newLetter = answer.charAt(3) + "";
 
-                if (lettersList.get(3).equals(newLetter)) {
-                    makeAnimation(4);
-                    correctCol.set(3, true);
-                } else {
-                    makeHasAnimation(4);
+                    if (lettersList.get(3).equals(newLetter)) {
+                        makeAnimation(4);
+                        correctCol.set(3, true);
+                    } else {
+                        makeHasAnimation(4);
+                    }
                 }
             } else {
                 makeWrongAnimation(4);
@@ -1787,13 +1812,15 @@ public class GameFragment extends BaseFragment {
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(4))) {
-                String newLetter = answer.charAt(4) + "";
+                if (answer.length() > 4) {
+                    String newLetter = answer.charAt(4) + "";
 
-                if (lettersList.get(4).equals(newLetter)) {
-                    makeAnimation(5);
-                    correctCol.set(4, true);
-                } else {
-                    makeHasAnimation(5);
+                    if (lettersList.get(4).equals(newLetter)) {
+                        makeAnimation(5);
+                        correctCol.set(4, true);
+                    } else {
+                        makeHasAnimation(5);
+                    }
                 }
             } else {
                 makeWrongAnimation(5);
@@ -1804,7 +1831,12 @@ public class GameFragment extends BaseFragment {
 
     private void setButtonsBackground(ArrayList<String> list) {
         for (int i = 0; i < list.size(); i++) {
-            String answerChar = answer.charAt(i) + "";
+            String answerChar = "";
+            if (answer.length() > i) {
+                answerChar = answer.charAt(i) + "";
+            } else {
+                return;
+            }
             if (list.get(i).equalsIgnoreCase("Q")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnQ.setBackgroundResource(R.drawable.keyboard_correct_bg);

@@ -21,6 +21,7 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -28,6 +29,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.zuescoder69.wordle.databinding.FragmentResultBinding;
+import com.zuescoder69.wordle.params.FirebaseParams;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
 import com.zuescoder69.wordle.utils.CommonValues;
@@ -40,7 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-public class ResultFragment extends Fragment {
+public class ResultFragment extends BaseFragment {
     private FragmentResultBinding binding;
     private String answer = "";
     private Animation scaleUp, scaleDown;
@@ -51,6 +53,9 @@ public class ResultFragment extends Fragment {
     private String userId1 = "", userId2 = "";
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
+    private DatabaseReference databaseReferenceRealTime;
+    private ValueEventListener valueEventListener;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public ResultFragment() {
         // Required empty public constructor
@@ -76,6 +81,8 @@ public class ResultFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         userId = sessionManager.getStringKey(Params.KEY_USER_ID);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
+        mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_OVER, null);
         binding.resultLayout.setVisibility(View.GONE);
         binding.progress.setVisibility(View.VISIBLE);
         getCurrentDate();
@@ -117,11 +124,11 @@ public class ResultFragment extends Fragment {
     }
 
     private void setUpRestartGame() {
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        databaseReferenceRealTime = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists() && CommonValues.currentFragment.equalsIgnoreCase(CommonValues.resultFragment)) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
@@ -157,7 +164,14 @@ public class ResultFragment extends Fragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        databaseReferenceRealTime.addValueEventListener(valueEventListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        databaseReferenceRealTime.removeEventListener(valueEventListener);
     }
 
     private void restartGame() {
@@ -185,6 +199,8 @@ public class ResultFragment extends Fragment {
                     });
         } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
             binding.answerBtn.setVisibility(View.VISIBLE);
+        } else if (CommonValues.adFreeUserId.contains(userId)) {
+            binding.answerBtn.setVisibility(View.VISIBLE);
         }
     }
 
@@ -200,6 +216,9 @@ public class ResultFragment extends Fragment {
                         binding.answerTv.setVisibility(View.VISIBLE);
                         binding.answerTv.setText("Wordly is - " + answer);
                     });
+                } else if (CommonValues.adFreeUserId.contains(userId)) {
+                    binding.answerTv.setVisibility(View.VISIBLE);
+                    binding.answerTv.setText("Wordly is - " + answer);
                 }
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.answerBtn.startAnimation(scaleDown);
@@ -211,14 +230,29 @@ public class ResultFragment extends Fragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.restartGameBtn.startAnimation(scaleUp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
-                Map setValues = new HashMap();
-                if (userId.equalsIgnoreCase(userId1)) {
-                    setValues.put("UserRestartStatus1", "Yes");
-                }
-                else if (userId.equalsIgnoreCase(userId2)) {
-                    setValues.put("UserRestartStatus2", "Yes");
-                }
-                databaseReference.updateChildren(setValues);
+                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            Map setValues = new HashMap();
+                            if (userId.equalsIgnoreCase(userId1)) {
+                                setValues.put("UserRestartStatus1", "Yes");
+                            }
+                            else if (userId.equalsIgnoreCase(userId2)) {
+                                setValues.put("UserRestartStatus2", "Yes");
+                            }
+                            databaseReference.updateChildren(setValues);
+                        } else {
+                            showToast("Opponent left the room", getContext(), getActivity());
+                            Navigation.findNavController(getView()).navigate(R.id.action_resultFragment_to_menu_fragment);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.restartGameBtn.startAnimation(scaleDown);
             }
@@ -230,6 +264,7 @@ public class ResultFragment extends Fragment {
                 binding.homeBtn.startAnimation(scaleUp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(CommonValues.roomId);
                 databaseReference.removeValue();
+                Navigation.findNavController(getView()).navigate(R.id.action_resultFragment_to_menu_fragment);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.homeBtn.startAnimation(scaleDown);
             }
@@ -288,6 +323,7 @@ public class ResultFragment extends Fragment {
                                                                         Bundle bundle = new Bundle();
                                                                         bundle.putString("gameMode", Params.MULTI_GAME_MODE);
                                                                         if (getView() != null) {
+                                                                            mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_RESTART, null);
                                                                             Navigation.findNavController(getView()).navigate(R.id.action_resultFragment_to_gameFragment, bundle);
                                                                         }
                                                                     },1000);
@@ -382,6 +418,7 @@ public class ResultFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        CommonValues.currentFragment = CommonValues.resultFragment;
         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 }

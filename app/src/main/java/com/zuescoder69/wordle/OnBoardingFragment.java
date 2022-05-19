@@ -80,4 +80,10 @@ public class OnBoardingFragment extends BaseFragment {
             binding.row35.setTextColor(getContext().getColor(R.color.no_bg_txt));
         }
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        CommonValues.currentFragment = CommonValues.onBoardingFragment;
+    }
 }
