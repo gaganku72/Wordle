@@ -9,7 +9,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,7 +26,10 @@ import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
 import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
@@ -93,6 +98,7 @@ public class GameFragment extends BaseFragment {
     private ValueEventListener valueEventListener;
     private Vibrator vibrator;
     private InterstitialAd mInterstitialAd;
+    private AdView adView;
 
     private ArrayList<RowModel> rowsList;
 
@@ -334,6 +340,7 @@ public class GameFragment extends BaseFragment {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                     String toShowAd = (String) map.get("ShowAd");
+                    String toShowBannerAd = (String) map.get("ShowBannerAd");
                     ArrayList<String> userId = new ArrayList<>();
                     for (int i = 1; i < 11; i++) {
                         if (map.containsKey("UserId" + i)) {
@@ -353,6 +360,9 @@ public class GameFragment extends BaseFragment {
                         } else {
                             CommonValues.isShowAd = true;
                             loadAd();
+                            if (toShowBannerAd.equalsIgnoreCase("true")) {
+                                loadBannerAd();
+                            }
                             if (!gameMode.equalsIgnoreCase(multi)) {
                                 loadRewardedAd();
                             }
@@ -370,6 +380,43 @@ public class GameFragment extends BaseFragment {
 
             }
         });
+    }
+
+    private void loadBannerAd() {
+        adView = new AdView(getContext());
+//        adView = binding.adView;
+        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+        binding.frameLayout.addView(adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        AdSize adSize = getAdSize();
+        // Step 4 - Set the adaptive ad size on the ad view.
+        adView.setAdSize(adSize);
+
+
+        // Step 5 - Start loading the ad in the background.
+        adView.loadAd(adRequest);
+        adView.setAdListener(new AdListener() {
+            @Override
+            public void onAdOpened() {
+                super.onAdOpened();
+                binding.frameLayout.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private AdSize getAdSize() {
+        // Step 2 - Determine the screen width (less decorations) to use for the ad width.
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+
+        float widthPixels = outMetrics.widthPixels;
+        float density = outMetrics.density;
+
+        int adWidth = (int) (widthPixels / density);
+
+        // Step 3 - Get adaptive ad size and return for setting on the ad view.
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), adWidth);
     }
 
     private void loadAd() {
