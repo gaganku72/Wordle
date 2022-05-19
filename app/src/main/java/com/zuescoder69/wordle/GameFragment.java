@@ -248,7 +248,9 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        databaseReferenceRealTime.removeEventListener(valueEventListener);
+        if (valueEventListener != null) {
+            databaseReferenceRealTime.removeEventListener(valueEventListener);
+        }
     }
 
     private void checkLobbyStatus() {
@@ -262,6 +264,7 @@ public class GameFragment extends BaseFragment {
                 if (!TextUtils.isEmpty(winnerId)) {
                     if (userId.equalsIgnoreCase(winnerId)) {
                         binding.victory.setVisibility(View.VISIBLE);
+                        sessionManager.addBooleanKey(Params.IS_GAME_WON, true);
                     } else {
                         binding.lose.setVisibility(View.VISIBLE);
                     }
@@ -350,7 +353,9 @@ public class GameFragment extends BaseFragment {
                         } else {
                             CommonValues.isShowAd = true;
                             loadAd();
-                            loadRewardedAd();
+                            if (!gameMode.equalsIgnoreCase(multi)) {
+                                loadRewardedAd();
+                            }
                         }
                     } else {
                         CommonValues.isShowAd = false;
@@ -3020,6 +3025,7 @@ public class GameFragment extends BaseFragment {
                 dbHandler.dropTable(gameMode);
                 sessionManager.clearGameModeSession(gameMode);
                 binding.victory.setVisibility(View.VISIBLE);
+                sessionManager.addBooleanKey(Params.IS_GAME_WON, true);
             }
             getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             binding.gameFragment.setEnabled(false);

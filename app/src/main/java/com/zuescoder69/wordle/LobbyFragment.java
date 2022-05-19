@@ -188,7 +188,9 @@ public class LobbyFragment extends BaseFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        databaseReferenceRealTime.removeEventListener(valueEventListener);
+        if (valueEventListener != null) {
+            databaseReferenceRealTime.removeEventListener(valueEventListener);
+        }
     }
 
     private void checkLobbyStatus() {

@@ -25,6 +25,10 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import com.google.android.gms.tasks.Task;
+import com.google.android.play.core.review.ReviewInfo;
+import com.google.android.play.core.review.ReviewManager;
+import com.google.android.play.core.review.ReviewManagerFactory;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -81,6 +85,26 @@ public class MenuFragment extends BaseFragment {
         getCurrentDate();
         setupOnClicks();
         getInitialData();
+        showAppRating();
+    }
+
+    private void showAppRating() {
+        boolean isGameWon = sessionManager.getBooleanKey(Params.IS_GAME_WON);
+        if (isGameWon && getActivity() != null && getContext() != null) {
+            ReviewManager manager = ReviewManagerFactory.create(getContext());
+            Task<ReviewInfo> request = manager.requestReviewFlow();
+            request.addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    // We can get the ReviewInfo object
+                    ReviewInfo reviewInfo = task.getResult();
+                    Task<Void> flow = manager.launchReviewFlow(getActivity(), reviewInfo);
+                    flow.addOnCompleteListener(task1 -> sessionManager.addBooleanKey(Params.IS_GAME_WON, false));
+                } else {
+                    // There was some problem, log or handle the error code.
+                    Log.d("DEMON", "showAppRating: error");
+                }
+            });
+        }
     }
 
     private void setTheme() {
