@@ -144,15 +144,14 @@ public class MenuFragment extends BaseFragment {
                     String toShowAd = (String) map.get("ShowAd");
                     adFreeMilliSeconds = (String) map.get("AdFreeMilliSeconds");
                     adFreeBtnText = (String) map.get("AdFreeBtnText");
-                    ArrayList<String> userId = new ArrayList<>();
                     for (int i = 1; i < 11; i++) {
                         if (map.containsKey("UserId" + i)) {
-                            userId.add((String) map.get("UserId" + i));
+                            CommonValues.adFreeUserId.add((String) map.get("UserId" + i));
                         }
                     }
                     if (toShowAd.equalsIgnoreCase("true")) {
                         String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
-                        if (userId.contains(currentUserId)) {
+                        if (CommonValues.adFreeUserId.contains(currentUserId)) {
                             CommonValues.isShowAd = false;
                             binding.progressBar.setVisibility(View.GONE);
                             binding.dailyBtn.setVisibility(View.VISIBLE);
