@@ -20,6 +20,7 @@ public class CommonValues {
     public static String roomId = "";
     public static String roomDate = "";
     public static ArrayList<String> roomIds = new ArrayList<>();
+    public static ArrayList<String> adFreeUserId = new ArrayList<>();
     public static RewardedAd mRewardedAd;
 
     public static final String splashScreenFragment = "splashScreenFragment";
@@ -29,6 +30,8 @@ public class CommonValues {
     public static final String lobbyFragment = "lobbyFragment";
     public static final String roomFragment = "roomFragment";
     public static final String resultFragment = "resultFragment";
+    public static final String onBoardingFragment = "onBoardingFragment";
+    public static final String settingsFragment = "settingsFragment";
     public static final String THEME = "theme";
     public static final String THEME_DARK = "themeDark";
     public static final String THEME_LIGHT = "themeLight";

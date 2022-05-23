@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -28,6 +29,7 @@ import com.google.firebase.dynamiclinks.DynamicLink;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.google.firebase.dynamiclinks.ShortDynamicLink;
 import com.zuescoder69.wordle.databinding.FragmentLobbyBinding;
+import com.zuescoder69.wordle.params.FirebaseParams;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
 import com.zuescoder69.wordle.utils.CommonValues;
@@ -39,7 +41,10 @@ public class LobbyFragment extends BaseFragment {
     private FragmentLobbyBinding binding;
     private Animation scaleUp, scaleDown;
     private DatabaseReference databaseReference;
+    private DatabaseReference databaseReferenceRealTime;
+    private ValueEventListener valueEventListener;
     private String roomId = "", userName1 = "", userName2 = "", userId1 = "", userId2 = "", answer = "", lobbyStatus = "", userIdLocal = "";
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public LobbyFragment() {
         // Required empty public constructor
@@ -65,6 +70,7 @@ public class LobbyFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         CommonValues.currentFragment = CommonValues.lobbyFragment;
         binding.progress.setVisibility(View.VISIBLE);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
         binding.lobby.setVisibility(View.GONE);
         getLobbyData();
         setUpOnClicks();
@@ -109,7 +115,7 @@ public class LobbyFragment extends BaseFragment {
         String shareLink = "https://wordl.page.link/?" +
                 "link=https://play.google.com/store/apps/details?id=com.zuescoder69.wordle/roomId-" + roomId +
                 "&apn=" + getContext().getPackageName() +
-                "&st=" + "Wordle" +
+                "&st=" + "Wordly" +
                 "&sd=" + "Join the room and let's play." +
                 "&si=" + "https://firebasestorage.googleapis.com/v0/b/name-place-animal-thing-b8644.appspot.com/o/icon.png?alt=media&token=85ac5cda-7e13-439b-9106-713430e0d5c3";
 
@@ -152,11 +158,11 @@ public class LobbyFragment extends BaseFragment {
         CommonValues.roomId = roomId;
         SessionManager sessionManager = new SessionManager(getContext());
         userIdLocal = sessionManager.getStringKey(Params.KEY_USER_ID);
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        databaseReferenceRealTime = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists() && CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
@@ -175,16 +181,28 @@ public class LobbyFragment extends BaseFragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        databaseReferenceRealTime.addValueEventListener(valueEventListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (valueEventListener != null) {
+            databaseReferenceRealTime.removeEventListener(valueEventListener);
+        }
     }
 
     private void checkLobbyStatus() {
-        if (lobbyStatus.equalsIgnoreCase("In-Game")) {
-            if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
-                Bundle bundle = new Bundle();
-                bundle.putString("gameMode", Params.MULTI_GAME_MODE);
-                if (getView() != null) {
-                    Navigation.findNavController(getView()).navigate(R.id.action_lobbyFragment_to_gameFragment, bundle);
+        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
+            if (lobbyStatus.equalsIgnoreCase("In-Game")) {
+                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.lobbyFragment)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("gameMode", Params.MULTI_GAME_MODE);
+                    if (getView() != null) {
+                        mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_STARTED, null);
+                        Navigation.findNavController(getView()).navigate(R.id.action_lobbyFragment_to_gameFragment, bundle);
+                    }
                 }
             }
         }
