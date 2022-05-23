@@ -53,6 +53,16 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void addLongKey(String key, long data) {
+        editor.putLong(key, data);
+        editor.commit();
+    }
+
+    public long getLongKey(String key) {
+        long result = userSession.getLong(key, 0);
+        return result;
+    }
+
     public String getStringKey(String key) {
         String result = userSession.getString(key, "");
         return result;
