@@ -35,6 +35,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.zuescoder69.wordle.databinding.FragmentMenuBinding;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
@@ -86,6 +87,8 @@ public class MenuFragment extends BaseFragment {
         setupOnClicks();
         getInitialData();
         showAppRating();
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        binding.textView9.setText(refreshedToken);
     }
 
     private void showAppRating() {

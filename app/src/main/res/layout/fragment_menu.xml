@@ -191,6 +191,19 @@
             app:lottie_loop="true"
             app:lottie_rawRes="@raw/help" />
 
+        <EditText
+            android:id="@+id/textView9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="TextView"
+            android:textSize="16sp"
+            android:textColor="@color/no_bg_txt"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/videoAd" />
+
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

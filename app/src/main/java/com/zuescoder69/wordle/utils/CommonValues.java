@@ -22,6 +22,7 @@ public class CommonValues {
     public static ArrayList<String> roomIds = new ArrayList<>();
     public static ArrayList<String> adFreeUserId = new ArrayList<>();
     public static RewardedAd mRewardedAd;
+    public static long notificationTime = 20000;
 
     public static final String splashScreenFragment = "splashScreenFragment";
     public static final String menuFragment = "menuFragment";

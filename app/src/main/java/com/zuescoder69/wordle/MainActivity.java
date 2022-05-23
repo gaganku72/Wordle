@@ -1,5 +1,6 @@
 package com.zuescoder69.wordle;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +15,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.zuescoder69.wordle.notification.MyBroadcastReceiver;
 import com.zuescoder69.wordle.utils.CommonValues;
 
 public class MainActivity extends AppCompatActivity {
@@ -25,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         NavController navController = Navigation.findNavController(this, R.id.mainFragment);
 
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d("DEMON", "Refreshed token: " + refreshedToken);
         FirebaseDynamicLinks.getInstance()
                 .getDynamicLink(getIntent())
                 .addOnSuccessListener(this, pendingDynamicLinkData -> {
@@ -62,5 +67,13 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         Log.d("DEMON", "onPause()");
         CommonValues.currentFragment = "none";
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.e("Custom", "onDestroy: " );
+        Intent broadcastIntent = new Intent(this, MyBroadcastReceiver.class);
+        sendBroadcast(broadcastIntent);
+        super.onDestroy();
     }
 }
