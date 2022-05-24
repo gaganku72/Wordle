@@ -98,11 +98,12 @@ public class GameFragment extends BaseFragment {
     private ValueEventListener valueEventListener;
     private Vibrator vibrator;
     private InterstitialAd mInterstitialAd;
-    private AdView adView;
 
     private ArrayList<RowModel> rowsList;
 
-    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false, isThemeBlack;
+    private boolean isEnterEnabled = true;
+    private boolean gameLost = false;
+    private boolean isAdFree = false;
     private final ArrayList<Boolean> correctCol = new ArrayList<>();
 
     public GameFragment() {
@@ -117,8 +118,12 @@ public class GameFragment extends BaseFragment {
         dbHandler = new DbHandler(getContext());
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
-        gameMode = bundle.getString("gameMode");
-        vibrator = (Vibrator) getActivity().getSystemService(VIBRATOR_SERVICE);
+        if (bundle != null && bundle.containsKey("gameMode")) {
+            gameMode = bundle.getString("gameMode");
+        }
+        if (getActivity() != null) {
+            vibrator = (Vibrator) getActivity().getSystemService(VIBRATOR_SERVICE);
+        }
     }
 
     @Override
@@ -161,8 +166,8 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setTheme() {
-        isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
-        if (isThemeBlack) {
+        boolean isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isThemeBlack && getContext() != null) {
             binding.row11.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row12.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row13.setTextColor(getContext().getColor(R.color.no_bg_txt));
@@ -383,65 +388,69 @@ public class GameFragment extends BaseFragment {
     }
 
     private void loadBannerAd() {
-        adView = new AdView(getContext());
-//        adView = binding.adView;
-        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
-        binding.frameLayout.addView(adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        AdSize adSize = getAdSize();
-        // Step 4 - Set the adaptive ad size on the ad view.
-        adView.setAdSize(adSize);
-
-
-        // Step 5 - Start loading the ad in the background.
-        adView.loadAd(adRequest);
-        adView.setAdListener(new AdListener() {
-            @Override
-            public void onAdOpened() {
-                super.onAdOpened();
-                binding.frameLayout.setVisibility(View.GONE);
+        if (getContext() != null) {
+            AdView adView = new AdView(getContext());
+            adView.setAdUnitId(CommonValues.bannerAdId);
+            binding.frameLayout.addView(adView);
+            AdRequest adRequest = new AdRequest.Builder().build();
+            AdSize adSize = getAdSize();
+            if (adSize != null) {
+                adView.setAdSize(adSize);
             }
-        });
+            adView.loadAd(adRequest);
+            adView.setAdListener(new AdListener() {
+                @Override
+                public void onAdOpened() {
+                    super.onAdOpened();
+                    binding.frameLayout.setVisibility(View.GONE);
+                }
+            });
+        }
     }
 
     private AdSize getAdSize() {
         // Step 2 - Determine the screen width (less decorations) to use for the ad width.
-        Display display = getActivity().getWindowManager().getDefaultDisplay();
-        DisplayMetrics outMetrics = new DisplayMetrics();
-        display.getMetrics(outMetrics);
+        if (getActivity() != null && getContext() != null) {
+            Display display = getActivity().getWindowManager().getDefaultDisplay();
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            display.getMetrics(outMetrics);
 
-        float widthPixels = outMetrics.widthPixels;
-        float density = outMetrics.density;
+            float widthPixels = outMetrics.widthPixels;
+            float density = outMetrics.density;
 
-        int adWidth = (int) (widthPixels / density);
+            int adWidth = (int) (widthPixels / density);
 
-        // Step 3 - Get adaptive ad size and return for setting on the ad view.
-        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), adWidth);
+            // Step 3 - Get adaptive ad size and return for setting on the ad view.
+            return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), adWidth);
+        }
+        return null;
     }
 
     private void loadAd() {
-        AdRequest adRequest = new AdRequest.Builder().build();
-        InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
-                new InterstitialAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-                        mInterstitialAd = interstitialAd;
-                        binding.progress.setVisibility(View.GONE);
-                        binding.gameFragment.setVisibility(View.VISIBLE);
-                    }
+        if (getContext() != null) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
+                    new InterstitialAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                            mInterstitialAd = interstitialAd;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                        }
 
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        Log.i(TAG, loadAdError.getMessage());
-                        mInterstitialAd = null;
-                        binding.progress.setVisibility(View.GONE);
-                        binding.gameFragment.setVisibility(View.VISIBLE);
-                    }
-                });
+                        @Override
+                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                            Log.i(TAG, loadAdError.getMessage());
+                            mInterstitialAd = null;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                        }
+                    });
+        }
     }
 
     private void loadRewardedAd() {
-        if (!gameMode.equalsIgnoreCase(multi)) {
+        if (!gameMode.equalsIgnoreCase(multi) && getActivity() != null) {
             if (CommonValues.mRewardedAd == null && CommonValues.isShowAd) {
                 AdRequest adRequest = new AdRequest.Builder().build();
                 RewardedAd.load(getActivity(), CommonValues.rewardAdId,
@@ -1084,7 +1093,7 @@ public class GameFragment extends BaseFragment {
                 if (isEnterEnabled) {
                     if (current == 6) {
                         if (row < 7 && row > 2) {
-                            if (mInterstitialAd != null && !isAdFree) {
+                            if (mInterstitialAd != null && !isAdFree && getActivity() != null) {
                                 mInterstitialAd.show(getActivity());
                                 loadAd();
                                 loadRewardedAd();
@@ -1158,7 +1167,7 @@ public class GameFragment extends BaseFragment {
                     break;
                 }
             }
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
@@ -1247,7 +1256,7 @@ public class GameFragment extends BaseFragment {
     private void restartGame() {
         if (CommonValues.isAdFree) {
             removeAllCharFromViews();
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
@@ -1345,7 +1354,7 @@ public class GameFragment extends BaseFragment {
             binding.hintTv.setText("Wordly is - " + answer);
             binding.restartGameBtn.setVisibility(View.GONE);
             binding.seeAnswerBtn.setVisibility(View.GONE);
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
@@ -2399,7 +2408,7 @@ public class GameFragment extends BaseFragment {
                         binding.row65.animate().alpha(1f).setDuration(250);
                         setBoxColor(binding.row65);
                         Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                        handler1.postDelayed(this::setMuliplayerLost, 500);
                     }, 250);
                 } else {
                     Handler handler = new Handler();
@@ -2716,7 +2725,7 @@ public class GameFragment extends BaseFragment {
                         setBoxColor(binding.row65);
                         binding.lose.setVisibility(View.VISIBLE);
                         Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
+                        handler1.postDelayed(this::setMuliplayerLost, 500);
                     }, 250);
                 } else {
                     Handler handler = new Handler();
@@ -3095,10 +3104,10 @@ public class GameFragment extends BaseFragment {
 //                            int currentStreak = 0;
 //                            int maxStreak = 0;
 
-                            if (map.containsKey(rowLocal)) {
+                            if (map != null && map.containsKey(rowLocal)) {
                                 score = Integer.parseInt((String) map.get(rowLocal));
                             }
-                            if (map.containsKey("totalPlayed")) {
+                            if (map != null && map.containsKey("totalPlayed")) {
                                 totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
                             }
 //                            if (map.containsKey("currentStreak")) {

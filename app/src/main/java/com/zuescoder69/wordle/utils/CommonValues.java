@@ -13,6 +13,7 @@ public class CommonValues {
     public static String rewardAdId = "ca-app-pub-2645963896743153/2080195209";
     public static String interNormalId = "";
     public static String interVideoId = "ca-app-pub-2645963896743153/7524093574";
+    public static String bannerAdId = "ca-app-pub-3940256099942544/6300978111";
     public static String currentFragment = "";
     public static boolean isShowAd = false;
     public static boolean isAdFree = false;
