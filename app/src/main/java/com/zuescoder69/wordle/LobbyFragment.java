@@ -72,7 +72,6 @@ public class LobbyFragment extends BaseFragment {
         binding.progress.setVisibility(View.VISIBLE);
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
         binding.lobby.setVisibility(View.GONE);
-        getLobbyData();
         setUpOnClicks();
     }
 
@@ -201,6 +200,7 @@ public class LobbyFragment extends BaseFragment {
                     bundle.putString("gameMode", Params.MULTI_GAME_MODE);
                     if (getView() != null) {
                         mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_STARTED, null);
+                        CommonValues.currentFragment = CommonValues.gameFragment;
                         Navigation.findNavController(getView()).navigate(R.id.action_lobbyFragment_to_gameFragment, bundle);
                     }
                 }
@@ -239,5 +239,6 @@ public class LobbyFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         CommonValues.currentFragment = CommonValues.lobbyFragment;
+        getLobbyData();
     }
 }

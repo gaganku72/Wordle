@@ -5,15 +5,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
-import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
 import com.zuescoder69.wordle.utils.CommonValues;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,17 +28,16 @@ public class MainActivity extends AppCompatActivity {
                     Uri deepLink;
                     if (pendingDynamicLinkData != null) {
                         deepLink = pendingDynamicLinkData.getLink();
-                        String joinLink=deepLink.toString();
-                        try
-                        {
-                            String roomId=joinLink.substring(joinLink.lastIndexOf("-")+1);
-                            Bundle bundle = new Bundle();
-                            bundle.putString("rooomId", roomId);
-                            navController.navigate(R.id.roomFragment, bundle);
-                        }
-                        catch (Exception e)
-                        {
-                            Log.e("DEMON", "onSuccess: " + e.getMessage());
+                        if (deepLink != null) {
+                            String joinLink = deepLink.toString();
+                            try {
+                                String roomId = joinLink.substring(joinLink.lastIndexOf("-") + 1);
+                                Bundle bundle = new Bundle();
+                                bundle.putString("rooomId", roomId);
+                                navController.navigate(R.id.roomFragment, bundle);
+                            } catch (Exception e) {
+                                Log.e("DEMON", "onSuccess: " + e.getMessage());
+                            }
                         }
                     }
 
