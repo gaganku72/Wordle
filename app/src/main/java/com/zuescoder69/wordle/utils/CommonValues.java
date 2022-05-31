@@ -17,9 +17,11 @@ public class CommonValues {
     public static String currentFragment = "";
     public static boolean isShowAd = false;
     public static boolean isAdFree = false;
+    public static boolean isUserPremium = false;
     public static String comeTomorrowMsg = "Game played for today";
     public static String roomId = "";
     public static String roomDate = "";
+    public static String currentDate = "";
     public static ArrayList<String> roomIds = new ArrayList<>();
     public static ArrayList<String> adFreeUserId = new ArrayList<>();
     public static RewardedAd mRewardedAd;
@@ -37,4 +39,7 @@ public class CommonValues {
     public static final String THEME_DARK = "themeDark";
     public static final String THEME_LIGHT = "themeLight";
     public static final String VIBRATION = "vibration";
+    public static final String CORRECT = "correct";
+    public static final String HAS = "has";
+    public static final String WRONG = "wrong";
 }

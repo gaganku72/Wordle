@@ -2,6 +2,8 @@ package com.zuescoder69.wordle;
 
 import static android.content.Context.VIBRATOR_SERVICE;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.database.Cursor;
@@ -91,6 +93,7 @@ public class GameFragment extends BaseFragment {
     private String userId2 = "";
 
     private Animation scaleUp, scaleDown;
+    private AnimatorSet rotate;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
@@ -115,6 +118,7 @@ public class GameFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
+        rotate = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate);
         dbHandler = new DbHandler(getContext());
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
@@ -802,6 +806,8 @@ public class GameFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.btnQ.startAnimation(scaleUp);
                 setCharInView("Q");
+                rotate.setTarget(binding.row11);
+                rotate.start();
                 vibrator.vibrate(vibrationTime);
             } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                 binding.btnQ.startAnimation(scaleDown);

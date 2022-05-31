@@ -73,9 +73,9 @@
     </fragment>
     <fragment
         android:id="@+id/gameFragment"
-        android:name="com.zuescoder69.wordle.GameFragment"
+        android:name="com.zuescoder69.wordle.game.NewGameFragment"
         android:label="fragment_game"
-        tools:layout="@layout/fragment_game">
+        tools:layout="@layout/fragment_new_game">
         <action
             android:id="@+id/action_gameFragment_to_menu_fragment"
             app:destination="@id/menu_fragment"
