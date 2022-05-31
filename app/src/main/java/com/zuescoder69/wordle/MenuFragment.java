@@ -177,6 +177,7 @@ public class MenuFragment extends BaseFragment {
                         String currentUserId = sessionManager.getStringKey(Params.KEY_USER_ID);
                         if (CommonValues.adFreeUserId.contains(currentUserId)) {
                             CommonValues.isShowAd = false;
+                            CommonValues.isUserPremium = true;
                             binding.progressBar.setVisibility(View.GONE);
                             binding.dailyBtn.setVisibility(View.VISIBLE);
                             binding.classicBtn.setVisibility(View.VISIBLE);
