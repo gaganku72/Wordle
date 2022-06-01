@@ -94,7 +94,7 @@ public class GameFragment extends BaseFragment {
     private String userId2 = "";
 
     private Animation scaleUp, scaleDown;
-    private AnimatorSet rotate;
+    private AnimatorSet rotate, rotateBack;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
@@ -122,6 +122,7 @@ public class GameFragment extends BaseFragment {
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
         rotate = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate);
+        rotateBack = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate_back);
         dbHandler = new DbHandler(getContext());
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
@@ -2383,10 +2384,13 @@ public class GameFragment extends BaseFragment {
                         if (getActivity() != null) {
                             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         }
-                        binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                         setBoxColor(binding.row65);
-                        showLostGameViews();
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> {
+                            binding.lose.setVisibility(View.VISIBLE);
+                            showLostGameViews();
+                        },1500);
                     }, changeColorTime);
                 }
                 setDataInDB(6);
@@ -2695,7 +2699,11 @@ public class GameFragment extends BaseFragment {
     private void rotateAnim(TextView textView) {
         if (isResumed) {
             rotate.setTarget(textView);
+            rotateBack.setTarget(textView);
             rotate.start();
+
+            Handler handler = new Handler();
+            handler.postDelayed(() -> rotateBack.start(),350);
         }
     }
 
