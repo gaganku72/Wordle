@@ -379,7 +379,7 @@ public class GameFragment extends BaseFragment {
                         } else {
                             CommonValues.isShowAd = true;
                             loadAd();
-                            if (toShowBannerAd.equalsIgnoreCase("true")) {
+                            if (toShowBannerAd.equalsIgnoreCase("true") && !gameMode.equalsIgnoreCase(multi)) {
                                 loadBannerAd();
                             }
                             if (!gameMode.equalsIgnoreCase(multi)) {
