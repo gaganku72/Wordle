@@ -14,7 +14,6 @@ import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.google.android.gms.ads.AdRequest;
@@ -137,7 +136,9 @@ public class ResultFragment extends BaseFragment {
                     binding.resultLayout.setVisibility(View.VISIBLE);
                     binding.progress.setVisibility(View.GONE);
 
-                    if (userRestartStatus1.equalsIgnoreCase("Yes")) {
+                    if (userRestartStatus1.equalsIgnoreCase("Yes") && userRestartStatus2.equalsIgnoreCase("Yes")) {
+                        binding.restartStatus.setText("Re-Match accepted!");
+                    } else if (userRestartStatus1.equalsIgnoreCase("Yes")) {
                         if (userId.equalsIgnoreCase(userId1)) {
                             binding.restartStatus.setVisibility(View.VISIBLE);
                             binding.restartStatus.setText("Re-Match game request sent!");
@@ -239,8 +240,7 @@ public class ResultFragment extends BaseFragment {
                             Map setValues = new HashMap();
                             if (userId.equalsIgnoreCase(userId1)) {
                                 setValues.put("UserRestartStatus1", "Yes");
-                            }
-                            else if (userId.equalsIgnoreCase(userId2)) {
+                            } else if (userId.equalsIgnoreCase(userId2)) {
                                 setValues.put("UserRestartStatus2", "Yes");
                             }
                             databaseReference.updateChildren(setValues);
@@ -328,7 +328,7 @@ public class ResultFragment extends BaseFragment {
                                                                             mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_RESTART, null);
                                                                             Navigation.findNavController(getView()).navigate(R.id.action_resultFragment_to_gameFragment, bundle);
                                                                         }
-                                                                    },1000);
+                                                                    }, 1000);
 //                                                                    RoomFragmentDirections.ActionRoomFragmentToLobbyFragment action = RoomFragmentDirections.actionRoomFragmentToLobbyFragment(newRoomId);
 //                                                                    Navigation.findNavController(getView()).navigate(action);
 //                                                                    binding.progressBar.setVisibility(View.GONE);

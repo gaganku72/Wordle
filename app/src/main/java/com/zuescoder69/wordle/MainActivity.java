@@ -2,8 +2,14 @@ package com.zuescoder69.wordle;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -13,6 +19,7 @@ import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.zuescoder69.wordle.utils.CommonValues;
 
 public class MainActivity extends AppCompatActivity {
+    private Boolean doubleBackToExitPressedOnce = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,5 +64,39 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         Log.d("DEMON", "onPause()");
         CommonValues.currentFragment = "none";
+    }
+
+    public void showToast(String msg) {
+        try {
+            LayoutInflater inflater = getLayoutInflater();
+            View layout = inflater.inflate(R.layout.creating_toast, this.findViewById(R.id.toast_layout));
+            Toast creatingRoomToast;
+            TextView toastContent = layout.findViewById(R.id.contentTV);
+            creatingRoomToast = new Toast(this);
+            creatingRoomToast.setGravity(Gravity.BOTTOM, 0, 0);
+            creatingRoomToast.setDuration(Toast.LENGTH_SHORT);
+            creatingRoomToast.setView(layout);
+            toastContent.setText(msg);
+            creatingRoomToast.show();
+        } catch (Exception e) {
+            Log.e("BaseFragment", e.getMessage());
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (CommonValues.currentFragment.equals(CommonValues.menuFragment) || CommonValues.currentFragment.equals(CommonValues.gameFragment) || CommonValues.currentFragment.equals(CommonValues.lobbyFragment)) {
+            if (doubleBackToExitPressedOnce) {
+                super.onBackPressed();
+                return;
+            }
+
+            doubleBackToExitPressedOnce = true;
+            showToast("Press BACK again to exit");
+
+            new Handler().postDelayed(() -> doubleBackToExitPressedOnce = false, 2000);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

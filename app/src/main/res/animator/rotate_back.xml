@@ -11,7 +11,7 @@
         android:valueTo="0"
         android:propertyName="rotationX"
         android:repeatMode="reverse"
-        android:duration="500"
+        android:duration="450"
         />
     <objectAnimator
         android:valueFrom="0.0"

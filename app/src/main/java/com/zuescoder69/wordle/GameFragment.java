@@ -75,7 +75,8 @@ public class GameFragment extends BaseFragment {
 
     private int row = 1;
     private int current = 1;
-    private final int changeColorTime = 250;
+    private final int changeColorTime = 450;
+    int nextLetterAnimTime = 920;
 
     private String wordsCount;
     private String answer;
@@ -1724,7 +1725,6 @@ public class GameFragment extends BaseFragment {
         if (getActivity() != null) {
             getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         }
-        int time = 1020;
 //        for (int i = 0; i < list.size(); i++) {
 //            int count = 0;
 //            int nums = 0;
@@ -1835,7 +1835,7 @@ public class GameFragment extends BaseFragment {
             } else {
                 makeWrongAnimation(1);
             }
-        }, time);
+        }, 50);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(1))) {
@@ -1852,7 +1852,7 @@ public class GameFragment extends BaseFragment {
             } else {
                 makeWrongAnimation(2);
             }
-        }, time * 2);
+        }, nextLetterAnimTime + 50);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(2))) {
@@ -1869,7 +1869,7 @@ public class GameFragment extends BaseFragment {
             } else {
                 makeWrongAnimation(3);
             }
-        }, time * 3);
+        }, nextLetterAnimTime * 2);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(3))) {
@@ -1886,7 +1886,7 @@ public class GameFragment extends BaseFragment {
             } else {
                 makeWrongAnimation(4);
             }
-        }, time * 4);
+        }, nextLetterAnimTime * 3);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(4))) {
@@ -1904,7 +1904,7 @@ public class GameFragment extends BaseFragment {
                 makeWrongAnimation(5);
             }
             setButtonsBackground(lettersList);
-        }, time * 5);
+        }, nextLetterAnimTime * 4);
     }
 
     private void setButtonsBackground(ArrayList<String> list) {
@@ -2372,11 +2372,13 @@ public class GameFragment extends BaseFragment {
                         if (getActivity() != null) {
                             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         }
-                        binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
                         setBoxColor(binding.row65);
                         Handler handler1 = new Handler();
-                        handler1.postDelayed(this::setMuliplayerLost, 1500);
+                        handler1.postDelayed(() -> {
+                            binding.lose.setVisibility(View.VISIBLE);
+                            setMuliplayerLost();
+                        }, 1700);
                     }, changeColorTime);
                 } else {
                     Handler handler = new Handler();
@@ -2389,13 +2391,32 @@ public class GameFragment extends BaseFragment {
                         Handler handler1 = new Handler();
                         handler1.postDelayed(() -> {
                             binding.lose.setVisibility(View.VISIBLE);
-                            showLostGameViews();
-                        },1500);
+                            if (gameMode.equalsIgnoreCase(classic)) {
+                                showLostGameViews();
+                            } else if (gameMode.equalsIgnoreCase(daily)) {
+                                showLostGameViewsForDaily();
+                            }
+                        },1200);
                     }, changeColorTime);
                 }
                 setDataInDB(6);
             }
         }
+    }
+
+    private void showLostGameViewsForDaily() {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            if (getActivity() != null) {
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            Bundle bundle = new Bundle();
+            bundle.putString("gameMode", daily);
+            if (getView() != null) {
+                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
+            }
+            showToast("Try Again");
+        },1800);
     }
 
     private void makeHasAnimation(int index) {
@@ -2644,9 +2665,11 @@ public class GameFragment extends BaseFragment {
                         }
                         binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
                         setBoxColor(binding.row65);
-                        binding.lose.setVisibility(View.VISIBLE);
                         Handler handler1 = new Handler();
-                        handler1.postDelayed(this::setMuliplayerLost, 1500);
+                        handler1.postDelayed(() -> {
+                            binding.lose.setVisibility(View.VISIBLE);
+                            setMuliplayerLost();
+                        }, 1700);
                     }, changeColorTime);
                 } else {
                     Handler handler = new Handler();
@@ -2654,10 +2677,17 @@ public class GameFragment extends BaseFragment {
                         if (getActivity() != null) {
                             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         }
-                        binding.lose.setVisibility(View.VISIBLE);
                         binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
                         setBoxColor(binding.row65);
-                        showLostGameViews();
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(() -> {
+                            binding.lose.setVisibility(View.VISIBLE);
+                            if (gameMode.equalsIgnoreCase(classic)) {
+                                showLostGameViews();
+                            } else if (gameMode.equalsIgnoreCase(daily)) {
+                                showLostGameViewsForDaily();
+                            }
+                        },1200);
                     }, changeColorTime);
                 }
                 setDataInDB(6);
@@ -2933,7 +2963,7 @@ public class GameFragment extends BaseFragment {
                     setBoxColor(binding.row61);
                 }, changeColorTime);
             } else if (index == 2) {
-                rotateAnim(binding.row61);
+                rotateAnim(binding.row62);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
                     binding.row62.setBackgroundResource(R.drawable.alphabets_correct_bg);
@@ -2962,7 +2992,8 @@ public class GameFragment extends BaseFragment {
                     }
                     binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
                     setBoxColor(binding.row65);
-                    index5("row6");
+                    Handler handler1 = new Handler();
+                    handler1.postDelayed(() -> index5("row6"),1300);
                 }, changeColorTime);
                 setDataInDB(6);
             }
@@ -3125,6 +3156,17 @@ public class GameFragment extends BaseFragment {
                 setValues.put("WinnerId", userId);
                 setValues.put("WinnerName", sessionManager.getStringKey(Params.KEY_USER_NAME));
                 databaseReference.updateChildren(setValues);
+            }
+        } else {
+            if (row == 7) {
+                binding.lose.setVisibility(View.VISIBLE);
+                if (gameMode.equalsIgnoreCase(daily)) {
+                    showLostGameViewsForDaily();
+                } else if (gameMode.equalsIgnoreCase(classic)) {
+                    showLostGameViews();
+                } else if (gameMode.equalsIgnoreCase(multi)) {
+                    setMuliplayerLost();
+                }
             }
         }
     }

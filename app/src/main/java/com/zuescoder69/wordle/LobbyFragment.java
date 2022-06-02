@@ -81,7 +81,7 @@ public class LobbyFragment extends BaseFragment {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 binding.startGameBtn.startAnimation(scaleUp);
                 if (TextUtils.isEmpty(userId2)) {
-                    showToast("So Alone In Life? Play Classic instead");
+                    showToast("So Alone In Life? Play Unlimited instead");
                 } else {
                     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
                     Map setValues = new HashMap();
