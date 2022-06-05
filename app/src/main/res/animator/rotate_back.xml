@@ -11,13 +11,13 @@
         android:valueTo="0"
         android:propertyName="rotationX"
         android:repeatMode="reverse"
-        android:duration="450"
+        android:duration="350"
         />
     <objectAnimator
         android:valueFrom="0.0"
         android:valueTo="1.0"
         android:propertyName="alpha"
-        android:startOffset="250"
+        android:startOffset="180"
         android:duration="0"
         />
 </set>
