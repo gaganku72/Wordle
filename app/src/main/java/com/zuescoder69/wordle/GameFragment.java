@@ -75,7 +75,7 @@ public class GameFragment extends BaseFragment {
 
     private int row = 1;
     private int current = 1;
-    private final int changeColorTime = 350;
+    private final int changeColorTime = 200;
     int nextLetterAnimTime = 520;
 
     private String wordsCount;
