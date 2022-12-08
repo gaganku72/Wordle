@@ -4,13 +4,27 @@
         android:valueFrom="0"
         android:valueTo="180"
         android:propertyName="rotationX"
-        android:duration="750"
+        android:duration="10"
         />
     <objectAnimator
         android:valueFrom="1.0"
         android:valueTo="0.0"
         android:propertyName="alpha"
-        android:startOffset="350"
         android:duration="1"
+        />
+
+    <objectAnimator
+        android:valueFrom="-180"
+        android:valueTo="0"
+        android:propertyName="rotationX"
+        android:startOffset="20"
+        android:duration="400"
+        />
+    <objectAnimator
+        android:valueFrom="0.0"
+        android:valueTo="1.0"
+        android:propertyName="alpha"
+        android:startOffset="190"
+        android:duration="0"
         />
 </set>

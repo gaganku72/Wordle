@@ -76,7 +76,7 @@ public class GameFragment extends BaseFragment {
     private int row = 1;
     private int current = 1;
     private final int changeColorTime = 350;
-    int nextLetterAnimTime = 770;
+    int nextLetterAnimTime = 520;
 
     private String wordsCount;
     private String answer;
@@ -95,7 +95,7 @@ public class GameFragment extends BaseFragment {
     private String userId2 = "";
 
     private Animation scaleUp, scaleDown;
-    private AnimatorSet rotate, rotateBack;
+    private AnimatorSet rotate;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
@@ -123,7 +123,6 @@ public class GameFragment extends BaseFragment {
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
         rotate = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate);
-        rotateBack = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate_back);
         dbHandler = new DbHandler(getContext());
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
@@ -215,8 +214,15 @@ public class GameFragment extends BaseFragment {
         }
     }
 
-    private void setBoxColor(TextView textView) {
+    private void setBoxColor(TextView textView, String status) {
         if (isResumed && getContext() != null) {
+            if (status.equalsIgnoreCase("correct")) {
+                textView.setBackgroundResource(R.drawable.alphabets_correct_bg);
+            } else if (status.equalsIgnoreCase("has")) {
+                textView.setBackgroundResource(R.drawable.alphabets_has_bg);
+            } else if (status.equalsIgnoreCase("wrong")) {
+                textView.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+            }
             textView.setTextColor(getContext().getColor(R.color.white));
         }
     }
@@ -247,15 +253,17 @@ public class GameFragment extends BaseFragment {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
-                    answer = (String) map.get("Answer");
-                    lobbyStatus = (String) map.get("Lobby Status");
-                    wordId = (String) map.get("WordId");
-                    winnerId = (String) map.get("WinnerId");
-                    winnerName = (String) map.get("WinnerName");
-                    userStatus1 = (String) map.get("UserStatus1");
-                    userStatus2 = (String) map.get("UserStatus2");
-                    userId1 = (String) map.get("UserId1");
-                    userId2 = (String) map.get("UserId2");
+                    if (map != null) {
+                        answer = (String) map.get("Answer");
+                        lobbyStatus = (String) map.get("Lobby Status");
+                        wordId = (String) map.get("WordId");
+                        winnerId = (String) map.get("WinnerId");
+                        winnerName = (String) map.get("WinnerName");
+                        userStatus1 = (String) map.get("UserStatus1");
+                        userStatus2 = (String) map.get("UserStatus2");
+                        userId1 = (String) map.get("UserId1");
+                        userId2 = (String) map.get("UserId2");
+                    }
                     checkLobbyStatus();
                 }
             }
@@ -585,11 +593,11 @@ public class GameFragment extends BaseFragment {
     private void setDataOfLastGameInViews() {
         for (int i = 0; i < rowsList.size(); i++) {
             row = Integer.parseInt(rowsList.get(i).getRow());
-            setCharInView(rowsList.get(i).getLetter1());
-            setCharInView(rowsList.get(i).getLetter2());
-            setCharInView(rowsList.get(i).getLetter3());
-            setCharInView(rowsList.get(i).getLetter4());
-            setCharInView(rowsList.get(i).getLetter5());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter1());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter2());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter3());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter4());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter5());
             ArrayList<String> list = new ArrayList<>();
             list.add(rowsList.get(i).getLetter1());
             list.add(rowsList.get(i).getLetter2());
@@ -1395,6 +1403,7 @@ public class GameFragment extends BaseFragment {
                 list.add(s);
             }
             wordleLogic(list);
+            setDataInDB(row);
             isEnterEnabled = true;
         } else {
             noWordAnimation();
@@ -1652,70 +1661,70 @@ public class GameFragment extends BaseFragment {
             String newLetter = answer.charAt(0) + "";
 
             if (lettersList.get(0).equals(newLetter)) {
-                makeAnimation(1);
+                makeAnimationForPreviousGame(1, "correct");
                 correctCol.set(0, true);
                 correctColLetters.set(0, lettersList.get(0));
             } else {
-                makeHasAnimation(1);
+                makeAnimationForPreviousGame(1, "has");
             }
         } else {
-            makeWrongAnimation(1);
+            makeAnimationForPreviousGame(1, "wrong");
         }
 
         if (answer.contains(lettersList.get(1))) {
             String newLetter = answer.charAt(1) + "";
 
             if (lettersList.get(1).equals(newLetter)) {
-                makeAnimation(2);
+                makeAnimationForPreviousGame(2, "correct");
                 correctCol.set(1, true);
                 correctColLetters.set(1, lettersList.get(1));
             } else {
-                makeHasAnimation(2);
+                makeAnimationForPreviousGame(2, "has");
             }
         } else {
-            makeWrongAnimation(2);
+            makeAnimationForPreviousGame(2, "wrong");
         }
 
         if (answer.contains(lettersList.get(2))) {
             String newLetter = answer.charAt(2) + "";
 
             if (lettersList.get(2).equals(newLetter)) {
-                makeAnimation(3);
+                makeAnimationForPreviousGame(3, "correct");
                 correctCol.set(2, true);
                 correctColLetters.set(2, lettersList.get(2));
             } else {
-                makeHasAnimation(3);
+                makeAnimationForPreviousGame(3, "has");
             }
         } else {
-            makeWrongAnimation(3);
+            makeAnimationForPreviousGame(3, "wrong");
         }
 
         if (answer.contains(lettersList.get(3))) {
             String newLetter = answer.charAt(3) + "";
 
             if (lettersList.get(3).equals(newLetter)) {
-                makeAnimation(4);
+                makeAnimationForPreviousGame(4, "correct");
                 correctCol.set(3, true);
                 correctColLetters.set(3, lettersList.get(3));
             } else {
-                makeHasAnimation(4);
+                makeAnimationForPreviousGame(4, "has");
             }
         } else {
-            makeWrongAnimation(4);
+            makeAnimationForPreviousGame(4, "wrong");
         }
 
         if (answer.contains(lettersList.get(4))) {
             String newLetter = answer.charAt(4) + "";
 
             if (lettersList.get(4).equals(newLetter)) {
-                makeAnimation(5);
+                makeAnimationForPreviousGame(5, "correct");
                 correctCol.set(4, true);
                 correctColLetters.set(4, lettersList.get(4));
             } else {
-                makeHasAnimation(5);
+                makeAnimationForPreviousGame(5, "has");
             }
         } else {
-            makeWrongAnimation(5);
+            makeAnimationForPreviousGame(5, "wrong");
         }
         setButtonsBackground(lettersList);
     }
@@ -1826,14 +1835,14 @@ public class GameFragment extends BaseFragment {
                     String newLetter = answer.charAt(0) + "";
 
                     if (lettersList.get(0).equals(newLetter)) {
-                        makeAnimation(1);
+                        makeAnimation(1, "correct");
                         correctCol.set(0, true);
                     } else {
-                        makeHasAnimation(1);
+                        makeAnimation(1, "has");
                     }
                 }
             } else {
-                makeWrongAnimation(1);
+                makeAnimation(1, "wrong");
             }
         }, 50);
 
@@ -1843,14 +1852,14 @@ public class GameFragment extends BaseFragment {
                     String newLetter = answer.charAt(1) + "";
 
                     if (lettersList.get(1).equals(newLetter)) {
-                        makeAnimation(2);
+                        makeAnimation(2, "correct");
                         correctCol.set(1, true);
                     } else {
-                        makeHasAnimation(2);
+                        makeAnimation(2, "has");
                     }
                 }
             } else {
-                makeWrongAnimation(2);
+                makeAnimation(2, "wrong");
             }
         }, nextLetterAnimTime + 50);
 
@@ -1860,14 +1869,14 @@ public class GameFragment extends BaseFragment {
                     String newLetter = answer.charAt(2) + "";
 
                     if (lettersList.get(2).equals(newLetter)) {
-                        makeAnimation(3);
+                        makeAnimation(3, "correct");
                         correctCol.set(2, true);
                     } else {
-                        makeHasAnimation(3);
+                        makeAnimation(3, "has");
                     }
                 }
             } else {
-                makeWrongAnimation(3);
+                makeAnimation(3, "wrong");
             }
         }, nextLetterAnimTime * 2);
 
@@ -1877,14 +1886,14 @@ public class GameFragment extends BaseFragment {
                     String newLetter = answer.charAt(3) + "";
 
                     if (lettersList.get(3).equals(newLetter)) {
-                        makeAnimation(4);
+                        makeAnimation(4, "correct");
                         correctCol.set(3, true);
                     } else {
-                        makeHasAnimation(4);
+                        makeAnimation(4, "has");
                     }
                 }
             } else {
-                makeWrongAnimation(4);
+                makeAnimation(4, "wrong");
             }
         }, nextLetterAnimTime * 3);
 
@@ -1894,14 +1903,14 @@ public class GameFragment extends BaseFragment {
                     String newLetter = answer.charAt(4) + "";
 
                     if (lettersList.get(4).equals(newLetter)) {
-                        makeAnimation(5);
+                        makeAnimation(5, "correct");
                         correctCol.set(4, true);
                     } else {
-                        makeHasAnimation(5);
+                        makeAnimation(5, "has");
                     }
                 }
             } else {
-                makeWrongAnimation(5);
+                makeAnimation(5, "wrong");
             }
             setButtonsBackground(lettersList);
         }, nextLetterAnimTime * 4);
@@ -2129,281 +2138,6 @@ public class GameFragment extends BaseFragment {
         current = 1;
     }
 
-    private void makeWrongAnimation(int index) {
-        if (row == 1) {
-            if (index == 1) {
-                rotateAnim(binding.row11);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row11);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row12);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row12);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row13);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row13);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row14);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row14);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row15);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row15);
-                }, changeColorTime);
-                setDataInDB(1);
-            }
-        } else if (row == 2) {
-            if (index == 1) {
-                rotateAnim(binding.row21);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row21);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row22);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row22);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row23);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row23);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row24);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row24);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row25);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row25);
-                }, changeColorTime);
-                setDataInDB(2);
-            }
-        } else if (row == 3) {
-            if (index == 1) {
-                rotateAnim(binding.row31);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row31);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row32);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row32);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row33);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row33);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row34);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row34);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row35);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row35);
-                }, changeColorTime);
-                setDataInDB(3);
-            }
-        } else if (row == 4) {
-            if (index == 1) {
-                rotateAnim(binding.row41);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row41);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row42);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row42);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row43);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row43);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row44);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row44);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row45);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row45);
-                }, changeColorTime);
-                setDataInDB(4);
-            }
-        } else if (row == 5) {
-            if (index == 1) {
-                rotateAnim(binding.row51);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row51);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row52);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row52);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row53);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row53);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row54);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row54);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row55);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row55);
-                }, changeColorTime);
-                setDataInDB(5);
-            }
-        } else if (row == 6) {
-            if (index == 1) {
-                rotateAnim(binding.row61);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row61);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row62);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row62);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row63);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row63);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row64);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    setBoxColor(binding.row64);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row65);
-                if (gameMode.equalsIgnoreCase(multi)) {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        if (getActivity() != null) {
-                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        }
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                        setBoxColor(binding.row65);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            binding.lose.setVisibility(View.VISIBLE);
-                            setMuliplayerLost();
-                        }, 1700);
-                    }, changeColorTime);
-                } else {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        if (getActivity() != null) {
-                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        }
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                        setBoxColor(binding.row65);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            binding.lose.setVisibility(View.VISIBLE);
-                            if (gameMode.equalsIgnoreCase(classic)) {
-                                showLostGameViews();
-                            } else if (gameMode.equalsIgnoreCase(daily)) {
-                                showLostGameViewsForDaily();
-                            }
-                        },1200);
-                    }, changeColorTime);
-                }
-                setDataInDB(6);
-            }
-        }
-    }
-
     private void showLostGameViewsForDaily() {
         Handler handler = new Handler();
         handler.postDelayed(() -> {
@@ -2417,282 +2151,6 @@ public class GameFragment extends BaseFragment {
             }
             showToast("Try Again");
         },1800);
-    }
-
-    private void makeHasAnimation(int index) {
-        if (row == 1) {
-            if (index == 1) {
-                rotateAnim(binding.row11);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row11);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row12);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row12);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row13);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row13);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row14);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row14);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row15);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row15);
-                }, changeColorTime);
-                setDataInDB(1);
-            }
-        } else if (row == 2) {
-            if (index == 1) {
-                rotateAnim(binding.row21);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row21);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row22);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row22);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row23);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row23);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row24);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row24);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row25);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row25);
-                }, changeColorTime);
-                setDataInDB(2);
-            }
-        } else if (row == 3) {
-            if (index == 1) {
-                rotateAnim(binding.row31);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row31);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row32);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row32);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row33);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row33);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row34);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row34);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row35);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row35);
-                }, changeColorTime);
-                setDataInDB(3);
-            }
-        } else if (row == 4) {
-            if (index == 1) {
-                rotateAnim(binding.row41);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row41);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row42);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row42);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row43);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row43);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row44);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row44);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row45);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row45);
-                }, changeColorTime);
-                setDataInDB(4);
-            }
-        } else if (row == 5) {
-            if (index == 1) {
-                rotateAnim(binding.row51);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row51);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row52);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row52);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row53);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row53);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row54);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row54);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row55);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    if (getActivity() != null) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    }
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row55);
-                }, changeColorTime);
-                setDataInDB(5);
-            }
-        } else if (row == 6) {
-            if (index == 1) {
-                rotateAnim(binding.row61);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row61);
-                }, changeColorTime);
-            } else if (index == 2) {
-                rotateAnim(binding.row62);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row62);
-                }, changeColorTime);
-            } else if (index == 3) {
-                rotateAnim(binding.row63);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    setBoxColor(binding.row63);
-                }, changeColorTime);
-            } else if (index == 4) {
-                rotateAnim(binding.row64);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    rotateAnim(binding.row64);
-                    setBoxColor(binding.row64);
-                }, changeColorTime);
-            } else if (index == 5) {
-                rotateAnim(binding.row65);
-                if (gameMode.equalsIgnoreCase(multi)) {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        if (getActivity() != null) {
-                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        }
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                        setBoxColor(binding.row65);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            binding.lose.setVisibility(View.VISIBLE);
-                            setMuliplayerLost();
-                        }, 1700);
-                    }, changeColorTime);
-                } else {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        if (getActivity() != null) {
-                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        }
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                        setBoxColor(binding.row65);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> {
-                            binding.lose.setVisibility(View.VISIBLE);
-                            if (gameMode.equalsIgnoreCase(classic)) {
-                                showLostGameViews();
-                            } else if (gameMode.equalsIgnoreCase(daily)) {
-                                showLostGameViewsForDaily();
-                            }
-                        },1200);
-                    }, changeColorTime);
-                }
-                setDataInDB(6);
-            }
-        }
     }
 
     private String getWord() {
@@ -2727,17 +2185,13 @@ public class GameFragment extends BaseFragment {
     }
 
     private void rotateAnim(TextView textView) {
-        if (isResumed) {
+        if (isResumed && !rotate.isRunning()) {
             rotate.setTarget(textView);
-            rotateBack.setTarget(textView);
             rotate.start();
-
-            Handler handler = new Handler();
-            handler.postDelayed(() -> rotateBack.start(),350);
         }
     }
 
-    private void makeAnimation(int index) {
+    private void makeAnimation(int index, String status) {
         if (currentWord == null) {
             currentWord = getWord();
         }
@@ -2746,29 +2200,25 @@ public class GameFragment extends BaseFragment {
                 rotateAnim(binding.row11);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row11);
+                    setBoxColor(binding.row11, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row12);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row12);
+                    setBoxColor(binding.row12, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row13);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row13);
+                    setBoxColor(binding.row13, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row14);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row14);
+                    setBoxColor(binding.row14, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row15);
@@ -2778,41 +2228,33 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
                     index5("row1");
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row15);
+                    setBoxColor(binding.row15, status);
                 }, changeColorTime);
-                setDataInDB(1);
             }
         } else if (row == 2) {
             if (index == 1) {
                 rotateAnim(binding.row21);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row21.animate().alpha(1f).setDuration(changeColorTime);
-                    setBoxColor(binding.row21);
+                    setBoxColor(binding.row21, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row22);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row22);
+                    setBoxColor(binding.row22, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row23);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row23);
+                    setBoxColor(binding.row23, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row24);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row24);
+                    setBoxColor(binding.row24, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row25);
@@ -2822,40 +2264,33 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
                     index5("row2");
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row25);
+                    setBoxColor(binding.row25, status);
                 }, changeColorTime);
-                setDataInDB(2);
             }
         } else if (row == 3) {
             if (index == 1) {
                 rotateAnim(binding.row31);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row31);
+                    setBoxColor(binding.row31, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row32);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row32.animate().alpha(1f).setDuration(changeColorTime);
-                    setBoxColor(binding.row32);
+                    setBoxColor(binding.row32, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row33);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row33);
+                    setBoxColor(binding.row33, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row34);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row34);
+                    setBoxColor(binding.row34, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row35);
@@ -2865,39 +2300,33 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
                     index5("row3");
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row35);
+                    setBoxColor(binding.row35, status);
                 }, changeColorTime);
-                setDataInDB(3);
             }
         } else if (row == 4) {
             if (index == 1) {
                 rotateAnim(binding.row41);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row41);
+                    setBoxColor(binding.row41, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row42);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row42);
+                    setBoxColor(binding.row42, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row43);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row43);
+                    setBoxColor(binding.row43, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row44);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row44);
+                    setBoxColor(binding.row44, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row45);
@@ -2907,39 +2336,33 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
                     index5("row4");
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row45);
+                    setBoxColor(binding.row45, status);
                 }, changeColorTime);
-                setDataInDB(4);
             }
         } else if (row == 5) {
             if (index == 1) {
                 rotateAnim(binding.row51);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row51);
+                    setBoxColor(binding.row51, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row52);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row52);
+                    setBoxColor(binding.row52, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row53);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row53);
+                    setBoxColor(binding.row53, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row54);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row54);
+                    setBoxColor(binding.row54, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row55);
@@ -2949,39 +2372,33 @@ public class GameFragment extends BaseFragment {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
                     index5("row5");
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row55);
+                    setBoxColor(binding.row55, status);
                 }, changeColorTime);
-                setDataInDB(5);
             }
         } else if (row == 6) {
             if (index == 1) {
                 rotateAnim(binding.row61);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row61);
+                    setBoxColor(binding.row61, status);
                 }, changeColorTime);
             } else if (index == 2) {
                 rotateAnim(binding.row62);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row62);
+                    setBoxColor(binding.row62, status);
                 }, changeColorTime);
             } else if (index == 3) {
                 rotateAnim(binding.row63);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row63);
+                    setBoxColor(binding.row63, status);
                 }, changeColorTime);
             } else if (index == 4) {
                 rotateAnim(binding.row64);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row64);
+                    setBoxColor(binding.row64, status);
                 }, changeColorTime);
             } else if (index == 5) {
                 rotateAnim(binding.row65);
@@ -2990,13 +2407,93 @@ public class GameFragment extends BaseFragment {
                     if (getActivity() != null) {
                         getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     }
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    setBoxColor(binding.row65);
+                    setBoxColor(binding.row65, status);
                     Handler handler1 = new Handler();
                     handler1.postDelayed(() -> index5("row6"),1300);
                 }, changeColorTime);
-                setDataInDB(6);
             }
+        }
+    }
+
+    private void makeAnimationForPreviousGame(int index, String status) {
+        if (currentWord == null) {
+            currentWord = getWord();
+        }
+        if (row == 1) {
+            if (index == 1) {
+                setBoxColor(binding.row11, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row12, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row13, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row14, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row15, status);
+            }
+        } else if (row == 2) {
+            if (index == 1) {
+                setBoxColor(binding.row21, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row22, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row23, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row24, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row25, status);
+            }
+        } else if (row == 3) {
+            if (index == 1) {
+                setBoxColor(binding.row31, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row32, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row33, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row34, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row35, status);
+            }
+        } else if (row == 4) {
+            if (index == 1) {
+                setBoxColor(binding.row41, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row42, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row43, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row44, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row45, status);
+            }
+        } else if (row == 5) {
+            if (index == 1) {
+                setBoxColor(binding.row51, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row52, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row53, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row54, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row55, status);
+            }
+        } else if (row == 6) {
+            if (index == 1) {
+                setBoxColor(binding.row61, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row62, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row63, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row64, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row65, status);
+            }
+        }
+        if (getActivity() != null) {
+            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         }
     }
 
@@ -3538,6 +3035,100 @@ public class GameFragment extends BaseFragment {
                 binding.row65.startAnimation(scaleUp);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> binding.row65.startAnimation(scaleDown), 120);
+            } else {
+                return;
+            }
+            current++;
+        }
+    }
+
+    private void setCharInViewPreviousGame(String alphabet) {
+        if (row == 1) {
+            if (current == 1) {
+                binding.row11.setText(alphabet);
+            } else if (current == 2) {
+                binding.row12.setText(alphabet);
+            } else if (current == 3) {
+                binding.row13.setText(alphabet);
+            } else if (current == 4) {
+                binding.row14.setText(alphabet);
+            } else if (current == 5) {
+                binding.row15.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 2) {
+            if (current == 1) {
+                binding.row21.setText(alphabet);
+            } else if (current == 2) {
+                binding.row22.setText(alphabet);
+            } else if (current == 3) {
+                binding.row23.setText(alphabet);
+            } else if (current == 4) {
+                binding.row24.setText(alphabet);
+            } else if (current == 5) {
+                binding.row25.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 3) {
+            if (current == 1) {
+                binding.row31.setText(alphabet);
+            } else if (current == 2) {
+                binding.row32.setText(alphabet);
+            } else if (current == 3) {
+                binding.row33.setText(alphabet);
+            } else if (current == 4) {
+                binding.row34.setText(alphabet);
+            } else if (current == 5) {
+                binding.row35.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 4) {
+            if (current == 1) {
+                binding.row41.setText(alphabet);
+            } else if (current == 2) {
+                binding.row42.setText(alphabet);
+            } else if (current == 3) {
+                binding.row43.setText(alphabet);
+            } else if (current == 4) {
+                binding.row44.setText(alphabet);
+            } else if (current == 5) {
+                binding.row45.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 5) {
+            if (current == 1) {
+                binding.row51.setText(alphabet);
+            } else if (current == 2) {
+                binding.row52.setText(alphabet);
+            } else if (current == 3) {
+                binding.row53.setText(alphabet);
+            } else if (current == 4) {
+                binding.row54.setText(alphabet);
+            } else if (current == 5) {
+                binding.row55.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 6) {
+            if (current == 1) {
+                binding.row61.setText(alphabet);
+            } else if (current == 2) {
+                binding.row62.setText(alphabet);
+            } else if (current == 3) {
+                binding.row63.setText(alphabet);
+            } else if (current == 4) {
+                binding.row64.setText(alphabet);
+            } else if (current == 5) {
+                binding.row65.setText(alphabet);
             } else {
                 return;
             }
