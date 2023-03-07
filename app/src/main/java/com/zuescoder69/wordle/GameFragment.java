@@ -2,6 +2,8 @@ package com.zuescoder69.wordle;
 
 import static android.content.Context.VIBRATOR_SERVICE;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.database.Cursor;
@@ -9,7 +11,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,7 +28,10 @@ import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
 import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
@@ -68,6 +75,8 @@ public class GameFragment extends BaseFragment {
 
     private int row = 1;
     private int current = 1;
+    private final int changeColorTime = 200;
+    int nextLetterAnimTime = 520;
 
     private String wordsCount;
     private String answer;
@@ -86,16 +95,23 @@ public class GameFragment extends BaseFragment {
     private String userId2 = "";
 
     private Animation scaleUp, scaleDown;
+    private AnimatorSet rotate;
     private DbHandler dbHandler;
     private SessionManager sessionManager;
     private DatabaseReference databaseReference;
+    private DatabaseReference databaseReferenceRealTime;
+    private ValueEventListener valueEventListener;
     private Vibrator vibrator;
     private InterstitialAd mInterstitialAd;
 
     private ArrayList<RowModel> rowsList;
 
-    private boolean isEnterEnabled = true, gameLost = false, isAdFree = false, isThemeBlack;
+    private boolean isEnterEnabled = true;
+    private boolean gameLost = false;
+    private boolean isAdFree = false;
+    private boolean isResumed = true;
     private final ArrayList<Boolean> correctCol = new ArrayList<>();
+    private final ArrayList<String> correctColLetters = new ArrayList<>();
 
     public GameFragment() {
         // Required empty public constructor
@@ -106,11 +122,16 @@ public class GameFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         scaleUp = AnimationUtils.loadAnimation(getContext(), R.anim.scale_up);
         scaleDown = AnimationUtils.loadAnimation(getContext(), R.anim.scale_down);
+        rotate = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(), R.animator.rotate);
         dbHandler = new DbHandler(getContext());
         rowsList = new ArrayList<>();
         Bundle bundle = getArguments();
-        gameMode = bundle.getString("gameMode");
-        vibrator = (Vibrator) getActivity().getSystemService(VIBRATOR_SERVICE);
+        if (bundle != null && bundle.containsKey("gameMode")) {
+            gameMode = bundle.getString("gameMode");
+        }
+        if (getActivity() != null) {
+            vibrator = (Vibrator) getActivity().getSystemService(VIBRATOR_SERVICE);
+        }
     }
 
     @Override
@@ -153,8 +174,8 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setTheme() {
-        isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
-        if (isThemeBlack) {
+        boolean isThemeBlack = sessionManager.getBooleanKey(CommonValues.THEME_DARK);
+        if (isThemeBlack && getContext() != null) {
             binding.row11.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row12.setTextColor(getContext().getColor(R.color.no_bg_txt));
             binding.row13.setTextColor(getContext().getColor(R.color.no_bg_txt));
@@ -193,8 +214,17 @@ public class GameFragment extends BaseFragment {
         }
     }
 
-    private void setBoxColor(TextView textView) {
-        textView.setTextColor(getContext().getColor(R.color.white));
+    private void setBoxColor(TextView textView, String status) {
+        if (isResumed && getContext() != null) {
+            if (status.equalsIgnoreCase("correct")) {
+                textView.setBackgroundResource(R.drawable.alphabets_correct_bg);
+            } else if (status.equalsIgnoreCase("has")) {
+                textView.setBackgroundResource(R.drawable.alphabets_has_bg);
+            } else if (status.equalsIgnoreCase("wrong")) {
+                textView.setBackgroundResource(R.drawable.alphabets_wrong_bg);
+            }
+            textView.setTextColor(getContext().getColor(R.color.white));
+        }
     }
 
     private void setVibration() {
@@ -209,28 +239,31 @@ public class GameFragment extends BaseFragment {
     private void initCorrectCol() {
         for (int i = 0; i < 5; i++) {
             correctCol.add(i, false);
+            correctColLetters.add(i, "");
         }
     }
 
     private void getMultiplayerGameData() {
         roomId = CommonValues.roomId;
-        databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        databaseReferenceRealTime = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists() && CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
                     GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
-                    answer = (String) map.get("Answer");
-                    lobbyStatus = (String) map.get("Lobby Status");
-                    wordId = (String) map.get("WordId");
-                    winnerId = (String) map.get("WinnerId");
-                    winnerName = (String) map.get("WinnerName");
-                    userStatus1 = (String) map.get("UserStatus1");
-                    userStatus2 = (String) map.get("UserStatus2");
-                    userId1 = (String) map.get("UserId1");
-                    userId2 = (String) map.get("UserId2");
+                    if (map != null) {
+                        answer = (String) map.get("Answer");
+                        lobbyStatus = (String) map.get("Lobby Status");
+                        wordId = (String) map.get("WordId");
+                        winnerId = (String) map.get("WinnerId");
+                        winnerName = (String) map.get("WinnerName");
+                        userStatus1 = (String) map.get("UserStatus1");
+                        userStatus2 = (String) map.get("UserStatus2");
+                        userId1 = (String) map.get("UserId1");
+                        userId2 = (String) map.get("UserId2");
+                    }
                     checkLobbyStatus();
                 }
             }
@@ -239,49 +272,75 @@ public class GameFragment extends BaseFragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        databaseReferenceRealTime.addValueEventListener(valueEventListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isResumed = false;
+        if (valueEventListener != null) {
+            databaseReferenceRealTime.removeEventListener(valueEventListener);
+        }
     }
 
     private void checkLobbyStatus() {
-        if (lobbyStatus.equalsIgnoreCase("Result")) {
-            databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
-            Map setValues = new HashMap();
-            setValues.put(wordInDB + wordId, "done");
-            databaseReference.updateChildren(setValues);
+        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+            if (lobbyStatus.equalsIgnoreCase("Result")) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+                Map setValues = new HashMap();
+                setValues.put(wordInDB + wordId, "done");
+                databaseReference.updateChildren(setValues);
 
-            if (!TextUtils.isEmpty(winnerId)) {
-                if (userId.equalsIgnoreCase(winnerId)) {
-                    binding.victory.setVisibility(View.VISIBLE);
-                } else {
-                    binding.lose.setVisibility(View.VISIBLE);
-                }
-            }
-
-            Handler handler1 = new Handler();
-            handler1.postDelayed(() -> {
-                if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("winnerName", winnerName);
-                    if (getView() != null) {
-                        Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                if (!TextUtils.isEmpty(winnerId)) {
+                    if (userId.equalsIgnoreCase(winnerId)) {
+                        binding.victory.setVisibility(View.VISIBLE);
+                        sessionManager.addBooleanKey(Params.IS_GAME_WON, true);
+                    } else {
+                        binding.lose.setVisibility(View.VISIBLE);
                     }
                 }
-            }, 5000);
-        } else {
-            if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+
                 Handler handler1 = new Handler();
                 handler1.postDelayed(() -> {
                     if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        if (getActivity() != null) {
+                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        }
                         Bundle bundle = new Bundle();
-                        bundle.putString("winnerName", "lost");
+                        bundle.putString("winnerName", winnerName);
                         bundle.putString("answer", answer);
+                        bundle.putString("roomId", roomId);
+                        bundle.putString("winnerId", winnerId);
+                        bundle.putString("userId1", userId1);
+                        bundle.putString("userId2", userId2);
                         if (getView() != null) {
                             Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
                         }
                     }
                 }, 5000);
+            } else {
+                if (userStatus1.equalsIgnoreCase("no") && userStatus2.equalsIgnoreCase("no")) {
+                    Handler handler1 = new Handler();
+                    handler1.postDelayed(() -> {
+                        if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
+                            if (getActivity() != null) {
+                                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                            }
+                            Bundle bundle = new Bundle();
+                            bundle.putString("winnerName", "lost");
+                            bundle.putString("answer", answer);
+                            bundle.putString("roomId", roomId);
+                            bundle.putString("winnerId", winnerId);
+                            bundle.putString("userId1", userId1);
+                            bundle.putString("userId2", userId2);
+                            if (getView() != null) {
+                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_resultFragment, bundle);
+                            }
+                        }
+                    }, 5000);
+                }
             }
         }
     }
@@ -307,6 +366,7 @@ public class GameFragment extends BaseFragment {
                     };
                     Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
                     String toShowAd = (String) map.get("ShowAd");
+                    String toShowBannerAd = (String) map.get("ShowBannerAd");
                     ArrayList<String> userId = new ArrayList<>();
                     for (int i = 1; i < 11; i++) {
                         if (map.containsKey("UserId" + i)) {
@@ -318,6 +378,7 @@ public class GameFragment extends BaseFragment {
                         if (userId.contains(currentUserId)) {
                             CommonValues.isShowAd = false;
                             CommonValues.isAdFree = true;
+                            CommonValues.isUserPremium = true;
                             binding.progress.setVisibility(View.GONE);
                             binding.gameFragment.setVisibility(View.VISIBLE);
                             if (!gameLost) {
@@ -326,8 +387,12 @@ public class GameFragment extends BaseFragment {
                         } else {
                             CommonValues.isShowAd = true;
                             loadAd();
-                            loadRewardedAd();
-                            setRewardedCallbacks();
+                            if (toShowBannerAd.equalsIgnoreCase("true") && !gameMode.equalsIgnoreCase(multi)) {
+                                loadBannerAd();
+                            }
+                            if (!gameMode.equalsIgnoreCase(multi)) {
+                                loadRewardedAd();
+                            }
                         }
                     } else {
                         CommonValues.isShowAd = false;
@@ -344,29 +409,70 @@ public class GameFragment extends BaseFragment {
         });
     }
 
-    private void loadAd() {
-        AdRequest adRequest = new AdRequest.Builder().build();
-        InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
-                new InterstitialAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-                        mInterstitialAd = interstitialAd;
-                        binding.progress.setVisibility(View.GONE);
-                        binding.gameFragment.setVisibility(View.VISIBLE);
-                    }
+    private void loadBannerAd() {
+        if (getContext() != null) {
+            AdView adView = new AdView(getContext());
+            adView.setAdUnitId(CommonValues.bannerAdId);
+            binding.frameLayout.addView(adView);
+            AdRequest adRequest = new AdRequest.Builder().build();
+            AdSize adSize = getAdSize();
+            if (adSize != null) {
+                adView.setAdSize(adSize);
+            }
+            adView.loadAd(adRequest);
+            adView.setAdListener(new AdListener() {
+                @Override
+                public void onAdOpened() {
+                    super.onAdOpened();
+                    binding.frameLayout.setVisibility(View.GONE);
+                }
+            });
+        }
+    }
 
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        Log.i(TAG, loadAdError.getMessage());
-                        mInterstitialAd = null;
-                        binding.progress.setVisibility(View.GONE);
-                        binding.gameFragment.setVisibility(View.VISIBLE);
-                    }
-                });
+    private AdSize getAdSize() {
+        // Step 2 - Determine the screen width (less decorations) to use for the ad width.
+        if (getActivity() != null && getContext() != null) {
+            Display display = getActivity().getWindowManager().getDefaultDisplay();
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            display.getMetrics(outMetrics);
+
+            float widthPixels = outMetrics.widthPixels;
+            float density = outMetrics.density;
+
+            int adWidth = (int) (widthPixels / density);
+
+            // Step 3 - Get adaptive ad size and return for setting on the ad view.
+            return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), adWidth);
+        }
+        return null;
+    }
+
+    private void loadAd() {
+        if (getContext() != null) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            InterstitialAd.load(getContext(), CommonValues.interVideoId, adRequest,
+                    new InterstitialAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                            mInterstitialAd = interstitialAd;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                        }
+
+                        @Override
+                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                            Log.i(TAG, loadAdError.getMessage());
+                            mInterstitialAd = null;
+                            binding.progress.setVisibility(View.GONE);
+                            binding.gameFragment.setVisibility(View.VISIBLE);
+                        }
+                    });
+        }
     }
 
     private void loadRewardedAd() {
-        if (!gameMode.equalsIgnoreCase(multi)) {
+        if (!gameMode.equalsIgnoreCase(multi) && getActivity() != null) {
             if (CommonValues.mRewardedAd == null && CommonValues.isShowAd) {
                 AdRequest adRequest = new AdRequest.Builder().build();
                 RewardedAd.load(getActivity(), CommonValues.rewardAdId,
@@ -382,6 +488,7 @@ public class GameFragment extends BaseFragment {
                             @Override
                             public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
                                 CommonValues.mRewardedAd = rewardedAd;
+                                setRewardedCallbacks();
                                 binding.progressBar.setVisibility(View.GONE);
                                 binding.gameFragment.setVisibility(View.VISIBLE);
                                 if (!gameLost) {
@@ -390,6 +497,7 @@ public class GameFragment extends BaseFragment {
                             }
                         });
             } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+                setRewardedCallbacks();
                 binding.progressBar.setVisibility(View.GONE);
                 binding.gameFragment.setVisibility(View.VISIBLE);
                 if (!gameLost) {
@@ -400,41 +508,43 @@ public class GameFragment extends BaseFragment {
     }
 
     private void setRewardedCallbacks() {
-        CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-            @Override
-            public void onAdClicked() {
-                super.onAdClicked();
-            }
+        if (CommonValues.mRewardedAd != null) {
+            CommonValues.mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                }
 
-            @Override
-            public void onAdDismissedFullScreenContent() {
-                super.onAdDismissedFullScreenContent();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    super.onAdDismissedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
 
-            @Override
-            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
-                super.onAdFailedToShowFullScreenContent(adError);
-            }
+                @Override
+                public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                    super.onAdFailedToShowFullScreenContent(adError);
+                }
 
-            @Override
-            public void onAdImpression() {
-                super.onAdImpression();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
+                @Override
+                public void onAdImpression() {
+                    super.onAdImpression();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
 
-            @Override
-            public void onAdShowedFullScreenContent() {
-                super.onAdShowedFullScreenContent();
-                CommonValues.mRewardedAd = null;
-                loadRewardedAd();
-                binding.helpBtn.setVisibility(View.INVISIBLE);
-            }
-        });
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    super.onAdShowedFullScreenContent();
+                    CommonValues.mRewardedAd = null;
+                    loadRewardedAd();
+                    binding.helpBtn.setVisibility(View.INVISIBLE);
+                }
+            });
+        }
     }
 
     private void getPreviousGameData() {
@@ -483,11 +593,11 @@ public class GameFragment extends BaseFragment {
     private void setDataOfLastGameInViews() {
         for (int i = 0; i < rowsList.size(); i++) {
             row = Integer.parseInt(rowsList.get(i).getRow());
-            setCharInView(rowsList.get(i).getLetter1());
-            setCharInView(rowsList.get(i).getLetter2());
-            setCharInView(rowsList.get(i).getLetter3());
-            setCharInView(rowsList.get(i).getLetter4());
-            setCharInView(rowsList.get(i).getLetter5());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter1());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter2());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter3());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter4());
+            setCharInViewPreviousGame(rowsList.get(i).getLetter5());
             ArrayList<String> list = new ArrayList<>();
             list.add(rowsList.get(i).getLetter1());
             list.add(rowsList.get(i).getLetter2());
@@ -1004,36 +1114,32 @@ public class GameFragment extends BaseFragment {
                 vibrator.vibrate(vibrationTime);
                 if (isEnterEnabled) {
                     if (current == 6) {
-                        if (row < 7 && row > 2) {
-                            if (mInterstitialAd != null && !isAdFree) {
-                                mInterstitialAd.show(getActivity());
-                                loadAd();
-                                loadRewardedAd();
-                                mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                                    @Override
-                                    public void onAdDismissedFullScreenContent() {
-                                        // Called when fullscreen content is dismissed.
-                                        submitWord();
-                                        Log.d("TAG", "The ad was dismissed.");
-                                    }
+                        if (mInterstitialAd != null && !isAdFree && getActivity() != null) {
+                            mInterstitialAd.show(getActivity());
+                            loadAd();
+                            loadRewardedAd();
+                            mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                                @Override
+                                public void onAdDismissedFullScreenContent() {
+                                    // Called when fullscreen content is dismissed.
+                                    submitWord();
+                                    Log.d("TAG", "The ad was dismissed.");
+                                }
 
-                                    @Override
-                                    public void onAdFailedToShowFullScreenContent(AdError adError) {
-                                        // Called when fullscreen content failed to show.
-                                        Log.d("TAG", "The ad failed to show.");
-                                    }
+                                @Override
+                                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                    // Called when fullscreen content failed to show.
+                                    Log.d("TAG", "The ad failed to show.");
+                                }
 
-                                    @Override
-                                    public void onAdShowedFullScreenContent() {
-                                        // Called when fullscreen content is shown.
-                                        // Make sure to set your reference to null so you don't
-                                        // show it a second time.
-                                        Log.d("TAG", "The ad was shown.");
-                                    }
-                                });
-                            } else {
-                                submitWord();
-                            }
+                                @Override
+                                public void onAdShowedFullScreenContent() {
+                                    // Called when fullscreen content is shown.
+                                    // Make sure to set your reference to null so you don't
+                                    // show it a second time.
+                                    Log.d("TAG", "The ad was shown.");
+                                }
+                            });
                         } else {
                             submitWord();
                         }
@@ -1068,24 +1174,28 @@ public class GameFragment extends BaseFragment {
     }
 
     private void showHint() {
-        if (CommonValues.isAdFree) {
+        if (CommonValues.isUserPremium) {
             for (int i = 0; i < correctCol.size(); i++) {
                 if (!correctCol.get(i)) {
                     binding.hintTv.setVisibility(View.VISIBLE);
-                    String hint = answer.charAt(i) + "";
-                    binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    if (answer.length() > i) {
+                        String hint = answer.charAt(i) + "";
+                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                    }
                     break;
                 }
             }
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
                 for (int i = 0; i < correctCol.size(); i++) {
                     if (!correctCol.get(i)) {
                         binding.hintTv.setVisibility(View.VISIBLE);
-                        String hint = answer.charAt(i) + "";
-                        binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        if (answer.length() > i) {
+                            String hint = answer.charAt(i) + "";
+                            binding.hintTv.setText("Word has letter - " + hint.toUpperCase());
+                        }
                         break;
                     }
                 }
@@ -1162,9 +1272,9 @@ public class GameFragment extends BaseFragment {
     }
 
     private void restartGame() {
-        if (CommonValues.isAdFree) {
+        if (CommonValues.isUserPremium) {
             removeAllCharFromViews();
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
@@ -1257,17 +1367,17 @@ public class GameFragment extends BaseFragment {
     }
 
     private void seeAnswer() {
-        if (CommonValues.isAdFree) {
+        if (CommonValues.isUserPremium) {
             binding.hintTv.setVisibility(View.VISIBLE);
-            binding.hintTv.setText("Wordle is - " + answer);
+            binding.hintTv.setText("Wordly is - " + answer);
             binding.restartGameBtn.setVisibility(View.GONE);
             binding.seeAnswerBtn.setVisibility(View.GONE);
-        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd) {
+        } else if (CommonValues.mRewardedAd != null && CommonValues.isShowAd && getActivity() != null) {
             CommonValues.mRewardedAd.show(getActivity(), rewardItem -> {
                 CommonValues.mRewardedAd = null;
                 loadRewardedAd();
                 binding.hintTv.setVisibility(View.VISIBLE);
-                binding.hintTv.setText("Wordle is - " + answer);
+                binding.hintTv.setText("Wordly is - " + answer);
                 binding.seeAnswerBtn.setVisibility(View.GONE);
                 binding.restartGameBtn.setVisibility(View.GONE);
             });
@@ -1293,6 +1403,7 @@ public class GameFragment extends BaseFragment {
                 list.add(s);
             }
             wordleLogic(list);
+            setDataInDB(row);
             isEnterEnabled = true;
         } else {
             noWordAnimation();
@@ -1485,7 +1596,9 @@ public class GameFragment extends BaseFragment {
 
     private void wordleLogicForPreviousGame(ArrayList<String> lettersList) {
         binding.gameFragment.setEnabled(false);
-        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+        if (getActivity() != null) {
+            getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+        }
         for (int i = lettersList.size() - 1; i >= 0; i--) {
             int count = 0;
             int nums = 0;
@@ -1548,73 +1661,79 @@ public class GameFragment extends BaseFragment {
             String newLetter = answer.charAt(0) + "";
 
             if (lettersList.get(0).equals(newLetter)) {
-                makeAnimation(1);
+                makeAnimationForPreviousGame(1, "correct");
                 correctCol.set(0, true);
+                correctColLetters.set(0, lettersList.get(0));
             } else {
-                makeHasAnimation(1);
+                makeAnimationForPreviousGame(1, "has");
             }
         } else {
-            makeWrongAnimation(1);
+            makeAnimationForPreviousGame(1, "wrong");
         }
 
         if (answer.contains(lettersList.get(1))) {
             String newLetter = answer.charAt(1) + "";
 
             if (lettersList.get(1).equals(newLetter)) {
-                makeAnimation(2);
+                makeAnimationForPreviousGame(2, "correct");
                 correctCol.set(1, true);
+                correctColLetters.set(1, lettersList.get(1));
             } else {
-                makeHasAnimation(2);
+                makeAnimationForPreviousGame(2, "has");
             }
         } else {
-            makeWrongAnimation(2);
+            makeAnimationForPreviousGame(2, "wrong");
         }
 
         if (answer.contains(lettersList.get(2))) {
             String newLetter = answer.charAt(2) + "";
 
             if (lettersList.get(2).equals(newLetter)) {
-                makeAnimation(3);
+                makeAnimationForPreviousGame(3, "correct");
                 correctCol.set(2, true);
+                correctColLetters.set(2, lettersList.get(2));
             } else {
-                makeHasAnimation(3);
+                makeAnimationForPreviousGame(3, "has");
             }
         } else {
-            makeWrongAnimation(3);
+            makeAnimationForPreviousGame(3, "wrong");
         }
 
         if (answer.contains(lettersList.get(3))) {
             String newLetter = answer.charAt(3) + "";
 
             if (lettersList.get(3).equals(newLetter)) {
-                makeAnimation(4);
+                makeAnimationForPreviousGame(4, "correct");
                 correctCol.set(3, true);
+                correctColLetters.set(3, lettersList.get(3));
             } else {
-                makeHasAnimation(4);
+                makeAnimationForPreviousGame(4, "has");
             }
         } else {
-            makeWrongAnimation(4);
+            makeAnimationForPreviousGame(4, "wrong");
         }
 
         if (answer.contains(lettersList.get(4))) {
             String newLetter = answer.charAt(4) + "";
 
             if (lettersList.get(4).equals(newLetter)) {
-                makeAnimation(5);
+                makeAnimationForPreviousGame(5, "correct");
                 correctCol.set(4, true);
+                correctColLetters.set(4, lettersList.get(4));
             } else {
-                makeHasAnimation(5);
+                makeAnimationForPreviousGame(5, "has");
             }
         } else {
-            makeWrongAnimation(5);
+            makeAnimationForPreviousGame(5, "wrong");
         }
         setButtonsBackground(lettersList);
     }
 
     private void wordleLogic(ArrayList<String> lettersList) {
         binding.gameFragment.setEnabled(false);
-        getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-        int time = 260;
+        if (getActivity() != null) {
+            getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+        }
 //        for (int i = 0; i < list.size(); i++) {
 //            int count = 0;
 //            int nums = 0;
@@ -1655,9 +1774,11 @@ public class GameFragment extends BaseFragment {
             ArrayList<Integer> indexes = new ArrayList<>();
             ArrayList<Integer> actualIndexes = new ArrayList<>();
             for (int j = lettersList.size() - 1; j >= 0; j--) {
-                if (lettersList.get(i).equalsIgnoreCase(answer.charAt(j) + "")) {
-                    count++;
-                    actualIndexes.add(j);
+                if (answer.length() > j) {
+                    if (lettersList.get(i).equalsIgnoreCase(answer.charAt(j) + "")) {
+                        count++;
+                        actualIndexes.add(j);
+                    }
                 }
             }
             for (int j = lettersList.size() - 1; j >= 0; j--) {
@@ -1710,290 +1831,305 @@ public class GameFragment extends BaseFragment {
         Handler handler = new Handler();
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(0))) {
-                String newLetter = answer.charAt(0) + "";
+                if (answer.length() > 0) {
+                    String newLetter = answer.charAt(0) + "";
 
-                if (lettersList.get(0).equals(newLetter)) {
-                    makeAnimation(1);
-                    correctCol.set(0, true);
-                } else {
-                    makeHasAnimation(1);
+                    if (lettersList.get(0).equals(newLetter)) {
+                        makeAnimation(1, "correct");
+                        correctCol.set(0, true);
+                    } else {
+                        makeAnimation(1, "has");
+                    }
                 }
             } else {
-                makeWrongAnimation(1);
+                makeAnimation(1, "wrong");
             }
-        }, time);
+        }, 50);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(1))) {
-                String newLetter = answer.charAt(1) + "";
+                if (answer.length() > 1) {
+                    String newLetter = answer.charAt(1) + "";
 
-                if (lettersList.get(1).equals(newLetter)) {
-                    makeAnimation(2);
-                    correctCol.set(1, true);
-                } else {
-                    makeHasAnimation(2);
+                    if (lettersList.get(1).equals(newLetter)) {
+                        makeAnimation(2, "correct");
+                        correctCol.set(1, true);
+                    } else {
+                        makeAnimation(2, "has");
+                    }
                 }
             } else {
-                makeWrongAnimation(2);
+                makeAnimation(2, "wrong");
             }
-        }, time * 2);
+        }, nextLetterAnimTime + 50);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(2))) {
-                String newLetter = answer.charAt(2) + "";
+                if (answer.length() > 2) {
+                    String newLetter = answer.charAt(2) + "";
 
-                if (lettersList.get(2).equals(newLetter)) {
-                    makeAnimation(3);
-                    correctCol.set(2, true);
-                } else {
-                    makeHasAnimation(3);
+                    if (lettersList.get(2).equals(newLetter)) {
+                        makeAnimation(3, "correct");
+                        correctCol.set(2, true);
+                    } else {
+                        makeAnimation(3, "has");
+                    }
                 }
             } else {
-                makeWrongAnimation(3);
+                makeAnimation(3, "wrong");
             }
-        }, time * 3);
+        }, nextLetterAnimTime * 2);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(3))) {
-                String newLetter = answer.charAt(3) + "";
+                if (answer.length() > 3) {
+                    String newLetter = answer.charAt(3) + "";
 
-                if (lettersList.get(3).equals(newLetter)) {
-                    makeAnimation(4);
-                    correctCol.set(3, true);
-                } else {
-                    makeHasAnimation(4);
+                    if (lettersList.get(3).equals(newLetter)) {
+                        makeAnimation(4, "correct");
+                        correctCol.set(3, true);
+                    } else {
+                        makeAnimation(4, "has");
+                    }
                 }
             } else {
-                makeWrongAnimation(4);
+                makeAnimation(4, "wrong");
             }
-        }, time * 4);
+        }, nextLetterAnimTime * 3);
 
         handler.postDelayed(() -> {
             if (answer.contains(lettersList.get(4))) {
-                String newLetter = answer.charAt(4) + "";
+                if (answer.length() > 4) {
+                    String newLetter = answer.charAt(4) + "";
 
-                if (lettersList.get(4).equals(newLetter)) {
-                    makeAnimation(5);
-                    correctCol.set(4, true);
-                } else {
-                    makeHasAnimation(5);
+                    if (lettersList.get(4).equals(newLetter)) {
+                        makeAnimation(5, "correct");
+                        correctCol.set(4, true);
+                    } else {
+                        makeAnimation(5, "has");
+                    }
                 }
             } else {
-                makeWrongAnimation(5);
+                makeAnimation(5, "wrong");
             }
             setButtonsBackground(lettersList);
-        }, time * 5);
+        }, nextLetterAnimTime * 4);
     }
 
     private void setButtonsBackground(ArrayList<String> list) {
         for (int i = 0; i < list.size(); i++) {
-            String answerChar = answer.charAt(i) + "";
+            String answerChar = "";
+            if (answer.length() > i) {
+                answerChar = answer.charAt(i) + "";
+            } else {
+                return;
+            }
             if (list.get(i).equalsIgnoreCase("Q")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnQ.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnQ.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnQ.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("W")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnW.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnW.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnW.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("E")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnE.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnE.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnE.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("R")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnR.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnR.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnR.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("T")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnT.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnT.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnT.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("Y")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnY.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnY.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnY.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("U")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnU.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnU.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnU.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("I")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnI.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnI.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnI.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("O")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnO.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnO.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnO.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("P")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnP.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnP.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnP.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("A")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnA.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnA.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnA.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("S")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnS.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnS.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnS.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("D")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnD.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnD.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnD.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("F")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnF.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnF.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnF.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("G")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnG.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnG.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnG.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("H")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnH.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnH.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnH.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("J")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnJ.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnJ.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnJ.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("K")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnK.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnK.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnK.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("L")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnL.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnL.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnL.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("Z")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnZ.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnZ.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnZ.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("X")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnX.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnX.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnX.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("C")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnC.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnC.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnC.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("V")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnV.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnV.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnV.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("B")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnB.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnB.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnB.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("N")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnN.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnN.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnN.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             } else if (list.get(i).equalsIgnoreCase("M")) {
                 if (list.get(i).equalsIgnoreCase(answerChar)) {
                     binding.btnM.setBackgroundResource(R.drawable.keyboard_correct_bg);
-                } else if (answer.contains(list.get(i))) {
+                } else if (answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnM.setBackgroundResource(R.drawable.keyboard_has_bg);
-                } else {
+                } else if (!answer.contains(list.get(i)) && !correctColLetters.contains(list.get(i))) {
                     binding.btnM.setBackgroundResource(R.drawable.keyboard_wrong_bg);
                 }
             }
@@ -2002,635 +2138,19 @@ public class GameFragment extends BaseFragment {
         current = 1;
     }
 
-    private void makeWrongAnimation(int index) {
-        if (row == 1) {
-            if (index == 1) {
-                binding.row11.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row11.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row11);
-                }, 250);
-            } else if (index == 2) {
-                binding.row12.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row12.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row12);
-                }, 250);
-            } else if (index == 3) {
-                binding.row13.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row13.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row13);
-                }, 250);
-            } else if (index == 4) {
-                binding.row14.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row14.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row14);
-                }, 250);
-            } else if (index == 5) {
-                binding.row15.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row15.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row15);
-                }, 250);
-                setDataInDB(1);
+    private void showLostGameViewsForDaily() {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            if (getActivity() != null) {
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             }
-        } else if (row == 2) {
-            if (index == 1) {
-                binding.row21.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row21.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row21);
-                }, 250);
-            } else if (index == 2) {
-                binding.row22.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row22.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row22);
-                }, 250);
-            } else if (index == 3) {
-                binding.row23.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row23.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row23);
-                }, 250);
-            } else if (index == 4) {
-                binding.row24.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row24.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row24);
-                }, 250);
-            } else if (index == 5) {
-                binding.row25.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row25.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row25);
-                }, 250);
-                setDataInDB(2);
+            Bundle bundle = new Bundle();
+            bundle.putString("gameMode", daily);
+            if (getView() != null) {
+                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
             }
-        } else if (row == 3) {
-            if (index == 1) {
-                binding.row31.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row31.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row31);
-                }, 250);
-            } else if (index == 2) {
-                binding.row32.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row32.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row32);
-                }, 250);
-            } else if (index == 3) {
-                binding.row33.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row33.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row33);
-                }, 250);
-            } else if (index == 4) {
-                binding.row34.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row34.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row34);
-                }, 250);
-            } else if (index == 5) {
-                binding.row35.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row35.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row35);
-                }, 250);
-                setDataInDB(3);
-            }
-        } else if (row == 4) {
-            if (index == 1) {
-                binding.row41.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row41.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row41);
-                }, 250);
-            } else if (index == 2) {
-                binding.row42.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row42.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row42);
-                }, 250);
-            } else if (index == 3) {
-                binding.row43.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row43.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row43);
-                }, 250);
-            } else if (index == 4) {
-                binding.row44.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row44.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row44);
-                }, 250);
-            } else if (index == 5) {
-                binding.row45.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row45.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row45);
-                }, 250);
-                setDataInDB(4);
-            }
-        } else if (row == 5) {
-            if (index == 1) {
-                binding.row51.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row51.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row51);
-                }, 250);
-            } else if (index == 2) {
-                binding.row52.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row52.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row52);
-                }, 250);
-            } else if (index == 3) {
-                binding.row53.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row53.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row53);
-                }, 250);
-            } else if (index == 4) {
-                binding.row54.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row54.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row54);
-                }, 250);
-            } else if (index == 5) {
-                binding.row55.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row55.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row55);
-                }, 250);
-                setDataInDB(5);
-            }
-        } else if (row == 6) {
-            if (index == 1) {
-                binding.row61.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row61.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row61);
-                }, 250);
-            } else if (index == 2) {
-                binding.row62.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row62.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row62);
-                }, 250);
-            } else if (index == 3) {
-                binding.row63.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row63.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row63);
-                }, 250);
-            } else if (index == 4) {
-                binding.row64.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                    binding.row64.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row64);
-                }, 250);
-            } else if (index == 5) {
-                binding.row65.animate().alpha(0f).setDuration(250);
-                if (gameMode.equalsIgnoreCase(multi)) {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.lose.setVisibility(View.VISIBLE);
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                        binding.row65.animate().alpha(1f).setDuration(250);
-                        setBoxColor(binding.row65);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
-                    }, 250);
-                } else {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.lose.setVisibility(View.VISIBLE);
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_wrong_bg);
-                        binding.row65.animate().alpha(1f).setDuration(250);
-                        setBoxColor(binding.row65);
-                        showLostGameViews();
-                    }, 250);
-                }
-                setDataInDB(6);
-            }
-        }
-    }
-
-    private void makeHasAnimation(int index) {
-        if (row == 1) {
-            if (index == 1) {
-                binding.row11.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row11.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row11);
-                }, 250);
-            } else if (index == 2) {
-                binding.row12.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row12.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row12);
-                }, 250);
-            } else if (index == 3) {
-                binding.row13.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row13.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row13);
-                }, 250);
-            } else if (index == 4) {
-                binding.row14.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row14.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row14);
-                }, 250);
-            } else if (index == 5) {
-                binding.row15.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row15.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row15);
-                }, 250);
-                setDataInDB(1);
-            }
-        } else if (row == 2) {
-            if (index == 1) {
-                binding.row21.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row21.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row21);
-                }, 250);
-            } else if (index == 2) {
-                binding.row22.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row22.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row22);
-                }, 250);
-            } else if (index == 3) {
-                binding.row23.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row23.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row23);
-                }, 250);
-            } else if (index == 4) {
-                binding.row24.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row24.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row24);
-                }, 250);
-            } else if (index == 5) {
-                binding.row25.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row25.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row25);
-                }, 250);
-                setDataInDB(2);
-            }
-        } else if (row == 3) {
-            if (index == 1) {
-                binding.row31.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row31.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row31);
-                }, 250);
-            } else if (index == 2) {
-                binding.row32.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row32.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row32);
-                }, 250);
-            } else if (index == 3) {
-                binding.row33.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row33.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row33);
-                }, 250);
-            } else if (index == 4) {
-                binding.row34.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row34.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row34);
-                }, 250);
-            } else if (index == 5) {
-                binding.row35.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row35.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row35);
-                }, 250);
-                setDataInDB(3);
-            }
-        } else if (row == 4) {
-            if (index == 1) {
-                binding.row41.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row41.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row41);
-                }, 250);
-            } else if (index == 2) {
-                binding.row42.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row42.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row42);
-                }, 250);
-            } else if (index == 3) {
-                binding.row43.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row43.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row43);
-                }, 250);
-            } else if (index == 4) {
-                binding.row44.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row44.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row44);
-                }, 250);
-            } else if (index == 5) {
-                binding.row45.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row45.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row45);
-                }, 250);
-                setDataInDB(4);
-            }
-        } else if (row == 5) {
-            if (index == 1) {
-                binding.row51.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row51.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row51);
-                }, 250);
-            } else if (index == 2) {
-                binding.row52.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row52.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row52);
-                }, 250);
-            } else if (index == 3) {
-                binding.row53.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row53.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row53);
-                }, 250);
-            } else if (index == 4) {
-                binding.row54.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row54.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row54);
-                }, 250);
-            } else if (index == 5) {
-                binding.row55.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row55.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row55);
-                }, 250);
-                setDataInDB(5);
-            }
-        } else if (row == 6) {
-            if (index == 1) {
-                binding.row61.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row61.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row61);
-                }, 250);
-            } else if (index == 2) {
-                binding.row62.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row62.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row62);
-                }, 250);
-            } else if (index == 3) {
-                binding.row63.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row63.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row63);
-                }, 250);
-            } else if (index == 4) {
-                binding.row64.animate().alpha(0f).setDuration(250);
-                Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_has_bg);
-                    binding.row64.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row64);
-                }, 250);
-            } else if (index == 5) {
-                binding.row65.animate().alpha(0f).setDuration(250);
-                if (gameMode.equalsIgnoreCase(multi)) {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                        binding.row65.animate().alpha(1f).setDuration(250);
-                        setBoxColor(binding.row65);
-                        binding.lose.setVisibility(View.VISIBLE);
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(() -> setMuliplayerLost(), 500);
-                    }, 250);
-                } else {
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        binding.lose.setVisibility(View.VISIBLE);
-                        binding.row65.setBackgroundResource(R.drawable.alphabets_has_bg);
-                        binding.row65.animate().alpha(1f).setDuration(250);
-                        setBoxColor(binding.row65);
-                        showLostGameViews();
-                    }, 250);
-                }
-                setDataInDB(6);
-            }
-        }
+            showToast("Try Again");
+        },1800);
     }
 
     private String getWord() {
@@ -2664,304 +2184,316 @@ public class GameFragment extends BaseFragment {
         return word;
     }
 
-    private void makeAnimation(int index) {
+    private void rotateAnim(TextView textView) {
+        if (isResumed && !rotate.isRunning()) {
+            rotate.setTarget(textView);
+            rotate.start();
+        }
+    }
+
+    private void makeAnimation(int index, String status) {
         if (currentWord == null) {
             currentWord = getWord();
         }
         if (row == 1) {
             if (index == 1) {
-                binding.row11.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row11);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row11.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row11.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row11);
-                }, 250);
+                    setBoxColor(binding.row11, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row12.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row12);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row12.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row12.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row12);
-                }, 250);
+                    setBoxColor(binding.row12, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row13.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row13);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row13.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row13.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row13);
-                }, 250);
+                    setBoxColor(binding.row13, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row14.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row14);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row14.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row14.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row14);
-                }, 250);
+                    setBoxColor(binding.row14, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row15.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row15);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
                     index5("row1");
-                    binding.row15.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row15.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row15);
-                }, 250);
-                setDataInDB(1);
+                    setBoxColor(binding.row15, status);
+                }, changeColorTime);
             }
         } else if (row == 2) {
             if (index == 1) {
-                binding.row21.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row21);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row21.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row21.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row21);
-                }, 250);
+                    setBoxColor(binding.row21, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row22.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row22);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row22.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row22.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row22);
-                }, 250);
+                    setBoxColor(binding.row22, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row23.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row23);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row23.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row23.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row23);
-                }, 250);
+                    setBoxColor(binding.row23, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row24.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row24);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row24.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row24.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row24);
-                }, 250);
+                    setBoxColor(binding.row24, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row25.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row25);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
                     index5("row2");
-                    binding.row25.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row25.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row25);
-                }, 250);
-                setDataInDB(2);
+                    setBoxColor(binding.row25, status);
+                }, changeColorTime);
             }
         } else if (row == 3) {
             if (index == 1) {
-                binding.row31.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row31);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row31.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row31.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row31);
-                }, 250);
+                    setBoxColor(binding.row31, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row32.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row32);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row32.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row32.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row32);
-                }, 250);
+                    setBoxColor(binding.row32, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row33.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row33);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row33.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row33.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row33);
-                }, 250);
+                    setBoxColor(binding.row33, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row34.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row34);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row34.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row34.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row34);
-                }, 250);
+                    setBoxColor(binding.row34, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row35.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row35);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
                     index5("row3");
-                    binding.row35.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row35.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row35);
-                }, 250);
-                setDataInDB(3);
+                    setBoxColor(binding.row35, status);
+                }, changeColorTime);
             }
         } else if (row == 4) {
             if (index == 1) {
-                binding.row41.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row41);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row41.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row41.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row41);
-                }, 250);
+                    setBoxColor(binding.row41, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row42.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row42);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row42.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row42.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row42);
-                }, 250);
+                    setBoxColor(binding.row42, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row43.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row43);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row43.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row43.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row43);
-                }, 250);
+                    setBoxColor(binding.row43, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row44.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row44);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row44.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row44.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row44);
-                }, 250);
+                    setBoxColor(binding.row44, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row45.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row45);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
                     index5("row4");
-                    binding.row45.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row45.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row45);
-                }, 250);
-                setDataInDB(4);
+                    setBoxColor(binding.row45, status);
+                }, changeColorTime);
             }
         } else if (row == 5) {
             if (index == 1) {
-                binding.row51.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row51);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row51.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row51.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row51);
-                }, 250);
+                    setBoxColor(binding.row51, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row52.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row52);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row52.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row52.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row52);
-                }, 250);
+                    setBoxColor(binding.row52, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row53.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row53);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row53.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row53.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row53);
-                }, 250);
+                    setBoxColor(binding.row53, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row54.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row54);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row54.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row54.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row54);
-                }, 250);
+                    setBoxColor(binding.row54, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row55.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row55);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
                     index5("row5");
-                    binding.row55.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row55.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row55);
-                }, 250);
-                setDataInDB(5);
+                    setBoxColor(binding.row55, status);
+                }, changeColorTime);
             }
         } else if (row == 6) {
             if (index == 1) {
-                binding.row61.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row61);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row61.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row61.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row61);
-                }, 250);
+                    setBoxColor(binding.row61, status);
+                }, changeColorTime);
             } else if (index == 2) {
-                binding.row62.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row62);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row62.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row62.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row62);
-                }, 250);
+                    setBoxColor(binding.row62, status);
+                }, changeColorTime);
             } else if (index == 3) {
-                binding.row63.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row63);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row63.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row63.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row63);
-                }, 250);
+                    setBoxColor(binding.row63, status);
+                }, changeColorTime);
             } else if (index == 4) {
-                binding.row64.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row64);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-
-                    binding.row64.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row64.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row64);
-                }, 250);
+                    setBoxColor(binding.row64, status);
+                }, changeColorTime);
             } else if (index == 5) {
-                binding.row65.animate().alpha(0f).setDuration(250);
+                rotateAnim(binding.row65);
                 Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    binding.row65.setBackgroundResource(R.drawable.alphabets_correct_bg);
-                    binding.row65.animate().alpha(1f).setDuration(250);
-                    setBoxColor(binding.row65);
-                    index5("row6");
-                }, 250);
-                setDataInDB(6);
+                    if (getActivity() != null) {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    }
+                    setBoxColor(binding.row65, status);
+                    Handler handler1 = new Handler();
+                    handler1.postDelayed(() -> index5("row6"),1300);
+                }, changeColorTime);
             }
+        }
+    }
+
+    private void makeAnimationForPreviousGame(int index, String status) {
+        if (currentWord == null) {
+            currentWord = getWord();
+        }
+        if (row == 1) {
+            if (index == 1) {
+                setBoxColor(binding.row11, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row12, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row13, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row14, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row15, status);
+            }
+        } else if (row == 2) {
+            if (index == 1) {
+                setBoxColor(binding.row21, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row22, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row23, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row24, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row25, status);
+            }
+        } else if (row == 3) {
+            if (index == 1) {
+                setBoxColor(binding.row31, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row32, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row33, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row34, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row35, status);
+            }
+        } else if (row == 4) {
+            if (index == 1) {
+                setBoxColor(binding.row41, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row42, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row43, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row44, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row45, status);
+            }
+        } else if (row == 5) {
+            if (index == 1) {
+                setBoxColor(binding.row51, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row52, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row53, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row54, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row55, status);
+            }
+        } else if (row == 6) {
+            if (index == 1) {
+                setBoxColor(binding.row61, status);
+            } else if (index == 2) {
+                setBoxColor(binding.row62, status);
+            } else if (index == 3) {
+                setBoxColor(binding.row63, status);
+            } else if (index == 4) {
+                setBoxColor(binding.row64, status);
+            } else if (index == 5) {
+                setBoxColor(binding.row65, status);
+            }
+        }
+        if (getActivity() != null) {
+            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         }
     }
 
@@ -2970,9 +2502,13 @@ public class GameFragment extends BaseFragment {
             if (!gameMode.equalsIgnoreCase(multi)) {
                 dbHandler.dropTable(gameMode);
                 sessionManager.clearGameModeSession(gameMode);
-                binding.victory.setVisibility(View.VISIBLE);
+                sessionManager.addBooleanKey(Params.IS_GAME_WON, true);
+                Handler handler = new Handler();
+                handler.postDelayed(() -> binding.victory.setVisibility(View.VISIBLE), 200);
             }
-            getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            if (getActivity() != null) {
+                getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
             binding.gameFragment.setEnabled(false);
             if (gameMode.equalsIgnoreCase(daily)) {
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(daily).child(currentDate);
@@ -2980,68 +2516,62 @@ public class GameFragment extends BaseFragment {
                 setValues.put(currentDate, "done");
                 databaseReference.updateChildren(setValues);
 
-                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(daily);
-                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if (dataSnapshot.exists()) {
-                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
-                            };
-                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
-                            int score = 0;
-                            int totalPlayed = 0;
-//                            int currentStreak = 0;
-//                            int maxStreak = 0;
-
-                            if (map.containsKey(rowLocal)) {
-                                score = Integer.parseInt((String) map.get(rowLocal));
-                            }
-                            if (map.containsKey("totalPlayed")) {
-                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
-                            }
-//                            if (map.containsKey("currentStreak")) {
-//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(daily);
+//                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                        if (dataSnapshot.exists()) {
+//                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+//                            };
+//                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+//                            int score = 0;
+//                            int totalPlayed = 0;
+////                            int currentStreak = 0;
+////                            int maxStreak = 0;
+//
+//                            if (map != null && map.containsKey(rowLocal)) {
+//                                score = Integer.parseInt((String) map.get(rowLocal));
 //                            }
-//                            if (map.containsKey("maxStreak")) {
-//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            if (map != null && map.containsKey("totalPlayed")) {
+//                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
 //                            }
-
-                            Map setValues1 = new HashMap();
-                            setValues1.put(rowLocal, score + 1 + "");
-                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
-//                            setValues1.put("currentStreak", currentStreak + 1 + "");
-//                            setValues1.put("maxStreak", maxStreak + 1 + "");
-                            databaseReference.updateChildren(setValues1);
-                        } else {
-                            Map setValues1 = new HashMap();
-                            setValues1.put(rowLocal, "1");
-                            setValues1.put("totalPlayed", "1");
-//                            setValues1.put("currentStreak", "1");
-//                            setValues1.put("maxStreak", "1");
-                            databaseReference.updateChildren(setValues1);
-                        }
-
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
+////                            if (map.containsKey("currentStreak")) {
+////                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+////                            }
+////                            if (map.containsKey("maxStreak")) {
+////                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+////                            }
+//
+//                            Map setValues1 = new HashMap();
+//                            setValues1.put(rowLocal, score + 1 + "");
+//                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
+////                            setValues1.put("currentStreak", currentStreak + 1 + "");
+////                            setValues1.put("maxStreak", maxStreak + 1 + "");
+//                            databaseReference.updateChildren(setValues1);
+//                        } else {
+//                            Map setValues1 = new HashMap();
+//                            setValues1.put(rowLocal, "1");
+//                            setValues1.put("totalPlayed", "1");
+////                            setValues1.put("currentStreak", "1");
+////                            setValues1.put("maxStreak", "1");
+//                            databaseReference.updateChildren(setValues1);
+//                        }
+//
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                    }
+//                });
                 Handler handler1 = new Handler();
                 handler1.postDelayed(() -> {
                     if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            if (getView() != null) {
-                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                            }
-                        } else {
-                            if (getView() != null) {
-                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                            }
+                        if (getActivity() != null) {
+                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        }
+                        if (getView() != null) {
+                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
                         }
                     }
                 }, 5000);
@@ -3052,76 +2582,88 @@ public class GameFragment extends BaseFragment {
                 setValues.put(wordInDB + wordId, "done");
                 databaseReference.updateChildren(setValues);
 
-                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(classic);
-                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if (dataSnapshot.exists()) {
-                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
-                            };
-                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
-                            int score = 0;
-                            int totalPlayed = 0;
-//                            int currentStreak = 0;
-//                            int maxStreak = 0;
-
-                            if (map.containsKey(rowLocal)) {
-                                score = Integer.parseInt((String) map.get(rowLocal));
-                            }
-                            if (map.containsKey("totalPlayed")) {
-                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
-                            }
-//                            if (map.containsKey("currentStreak")) {
-//                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+//                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child("GameData").child(classic);
+//                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                        if (dataSnapshot.exists()) {
+//                            GenericTypeIndicator<Map<String, Object>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+//                            };
+//                            Map<String, Object> map = dataSnapshot.getValue(genericTypeIndicator);
+//                            int score = 0;
+//                            int totalPlayed = 0;
+////                            int currentStreak = 0;
+////                            int maxStreak = 0;
+//
+//                            if (map.containsKey(rowLocal)) {
+//                                score = Integer.parseInt((String) map.get(rowLocal));
 //                            }
-//                            if (map.containsKey("maxStreak")) {
-//                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+//                            if (map.containsKey("totalPlayed")) {
+//                                totalPlayed = Integer.parseInt((String) map.get("totalPlayed"));
 //                            }
-                            Map setValues1 = new HashMap();
-                            setValues1.put(rowLocal, score + 1 + "");
-                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
-//                            setValues1.put("currentStreak", currentStreak + 1 + "");
-//                            setValues1.put("maxStreak", maxStreak + 1 + "");
-                            databaseReference.updateChildren(setValues1);
-                        } else {
-                            Map setValues1 = new HashMap();
-                            setValues1.put(rowLocal, "1");
-                            setValues1.put("totalPlayed", "1");
-//                            setValues1.put("currentStreak", "1");
-//                            setValues1.put("maxStreak", "1");
-                            databaseReference.updateChildren(setValues1);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
+////                            if (map.containsKey("currentStreak")) {
+////                                currentStreak = Integer.parseInt((String) map.get("currentStreak"));
+////                            }
+////                            if (map.containsKey("maxStreak")) {
+////                                maxStreak = Integer.parseInt((String) map.get("maxStreak"));
+////                            }
+//                            Map setValues1 = new HashMap();
+//                            setValues1.put(rowLocal, score + 1 + "");
+//                            setValues1.put("totalPlayed", totalPlayed + 1 + "");
+////                            setValues1.put("currentStreak", currentStreak + 1 + "");
+////                            setValues1.put("maxStreak", maxStreak + 1 + "");
+//                            databaseReference.updateChildren(setValues1);
+//                        } else {
+//                            Map setValues1 = new HashMap();
+//                            setValues1.put(rowLocal, "1");
+//                            setValues1.put("totalPlayed", "1");
+////                            setValues1.put("currentStreak", "1");
+////                            setValues1.put("maxStreak", "1");
+//                            databaseReference.updateChildren(setValues1);
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                    }
+//                });
                 Handler handler1 = new Handler();
                 handler1.postDelayed(() -> {
                     if (CommonValues.currentFragment.equalsIgnoreCase(CommonValues.gameFragment)) {
-                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                        if (gameMode.equalsIgnoreCase(classic)) {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("gameMode", classic);
-                            if (getView() != null) {
-                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
-                            }
-                        } else {
-                            if (getView() != null) {
-                                Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_to_menu_fragment);
-                            }
+                        if (getActivity() != null) {
+                            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        }
+                        Bundle bundle = new Bundle();
+                        bundle.putString("gameMode", classic);
+                        if (getView() != null) {
+                            Navigation.findNavController(getView()).navigate(R.id.action_gameFragment_self, bundle);
                         }
                     }
                 }, 5000);
             } else if (gameMode.equalsIgnoreCase(multi)) {
+                databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("User Details").child(userId).child(classic).child(currentDate);
+                Map setValues0 = new HashMap();
+                setValues0.put(wordInDB + wordId, "done");
+                databaseReference.updateChildren(setValues0);
+
                 databaseReference = FirebaseDatabase.getInstance().getReference().child("Wordle").child("Rooms").child(CommonValues.roomDate).child(roomId);
                 Map setValues = new HashMap();
                 setValues.put("Lobby Status", "Result");
                 setValues.put("WinnerId", userId);
                 setValues.put("WinnerName", sessionManager.getStringKey(Params.KEY_USER_NAME));
                 databaseReference.updateChildren(setValues);
+            }
+        } else {
+            if (row == 7) {
+                binding.lose.setVisibility(View.VISIBLE);
+                if (gameMode.equalsIgnoreCase(daily)) {
+                    showLostGameViewsForDaily();
+                } else if (gameMode.equalsIgnoreCase(classic)) {
+                    showLostGameViews();
+                } else if (gameMode.equalsIgnoreCase(multi)) {
+                    setMuliplayerLost();
+                }
             }
         }
     }
@@ -3500,6 +3042,100 @@ public class GameFragment extends BaseFragment {
         }
     }
 
+    private void setCharInViewPreviousGame(String alphabet) {
+        if (row == 1) {
+            if (current == 1) {
+                binding.row11.setText(alphabet);
+            } else if (current == 2) {
+                binding.row12.setText(alphabet);
+            } else if (current == 3) {
+                binding.row13.setText(alphabet);
+            } else if (current == 4) {
+                binding.row14.setText(alphabet);
+            } else if (current == 5) {
+                binding.row15.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 2) {
+            if (current == 1) {
+                binding.row21.setText(alphabet);
+            } else if (current == 2) {
+                binding.row22.setText(alphabet);
+            } else if (current == 3) {
+                binding.row23.setText(alphabet);
+            } else if (current == 4) {
+                binding.row24.setText(alphabet);
+            } else if (current == 5) {
+                binding.row25.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 3) {
+            if (current == 1) {
+                binding.row31.setText(alphabet);
+            } else if (current == 2) {
+                binding.row32.setText(alphabet);
+            } else if (current == 3) {
+                binding.row33.setText(alphabet);
+            } else if (current == 4) {
+                binding.row34.setText(alphabet);
+            } else if (current == 5) {
+                binding.row35.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 4) {
+            if (current == 1) {
+                binding.row41.setText(alphabet);
+            } else if (current == 2) {
+                binding.row42.setText(alphabet);
+            } else if (current == 3) {
+                binding.row43.setText(alphabet);
+            } else if (current == 4) {
+                binding.row44.setText(alphabet);
+            } else if (current == 5) {
+                binding.row45.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 5) {
+            if (current == 1) {
+                binding.row51.setText(alphabet);
+            } else if (current == 2) {
+                binding.row52.setText(alphabet);
+            } else if (current == 3) {
+                binding.row53.setText(alphabet);
+            } else if (current == 4) {
+                binding.row54.setText(alphabet);
+            } else if (current == 5) {
+                binding.row55.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        } else if (row == 6) {
+            if (current == 1) {
+                binding.row61.setText(alphabet);
+            } else if (current == 2) {
+                binding.row62.setText(alphabet);
+            } else if (current == 3) {
+                binding.row63.setText(alphabet);
+            } else if (current == 4) {
+                binding.row64.setText(alphabet);
+            } else if (current == 5) {
+                binding.row65.setText(alphabet);
+            } else {
+                return;
+            }
+            current++;
+        }
+    }
+
     private void showToast(String msg) {
         showToast(msg, getContext(), getActivity());
     }
@@ -3507,6 +3143,13 @@ public class GameFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
+        isResumed = true;
         CommonValues.currentFragment = CommonValues.gameFragment;
+    }
+
+    @Override
+    public void onPause() {
+        isResumed = false;
+        super.onPause();
     }
 }

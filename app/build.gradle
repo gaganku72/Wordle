@@ -27,8 +27,8 @@ android {
         applicationId "com.zuescoder69.wordle"
         minSdk 23
         targetSdk 31
-        versionCode 7
-        versionName "1.0.7"
+        versionCode 10
+        versionName "2.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -79,4 +79,5 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation "com.airbnb.android:lottie:3.7.0"
+    implementation 'com.google.android.play:review:2.0.0'
 }

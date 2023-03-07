@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.Navigation;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -22,6 +23,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.zuescoder69.wordle.databinding.FragmentRoomBinding;
+import com.zuescoder69.wordle.params.FirebaseParams;
 import com.zuescoder69.wordle.params.Params;
 import com.zuescoder69.wordle.userData.SessionManager;
 import com.zuescoder69.wordle.utils.CommonValues;
@@ -41,6 +43,7 @@ public class RoomFragment extends BaseFragment {
     private Animation scaleUp, scaleDown;
     private String newRoomId, wordsCount, wordId, answer, userId, currentDate, userName;
     private DatabaseReference databaseReference;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public RoomFragment() {
         // Required empty public constructor
@@ -66,6 +69,7 @@ public class RoomFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         CommonValues.currentFragment = CommonValues.roomFragment;
         binding.progressBar.setVisibility(View.VISIBLE);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
         getCurrentDate();
         getData();
         setUpOnClicks();
@@ -243,8 +247,11 @@ public class RoomFragment extends BaseFragment {
                                                                     setValues.put("WinnerId", "");
                                                                     setValues.put("WordId", wordId);
                                                                     setValues.put("WinnerName", "");
+                                                                    setValues.put("UserRestartStatus1", "No");
+                                                                    setValues.put("UserRestartStatus2", "No");
                                                                     databaseReference.setValue(setValues);
                                                                     CommonValues.roomIds.add(newRoomId);
+                                                                    mFirebaseAnalytics.logEvent(FirebaseParams.ROOM_CREATED, null);
                                                                     RoomFragmentDirections.ActionRoomFragmentToLobbyFragment action = RoomFragmentDirections.actionRoomFragmentToLobbyFragment(newRoomId);
                                                                     Navigation.findNavController(getView()).navigate(action);
                                                                     binding.progressBar.setVisibility(View.GONE);

@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "1090659915107-38444rftl9rl1ld806514k2i60cqv9ji.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zuescoder69.wordle",
+            "certificate_hash": "569b1e8fc00b041d074f0398feeaf896fe5c5049"
+          }
+        },
+        {
           "client_id": "1090659915107-3c2t2punr905bl5mcbt2phfftuaqcntg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

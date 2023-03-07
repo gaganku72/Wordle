@@ -121,4 +121,10 @@ public class SettingsFragment extends BaseFragment {
             return true;
         });
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        CommonValues.currentFragment = CommonValues.settingsFragment;
+    }
 }
