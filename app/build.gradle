@@ -21,14 +21,14 @@ android {
 //            keyPassword 'Skype.miracle96'
 //        }
     }
-    compileSdk 31
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.zuescoder69.wordle"
         minSdk 23
-        targetSdk 31
-        versionCode 10
-        versionName "2.0.0"
+        targetSdk 33
+        versionCode 11
+        versionName "2.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
